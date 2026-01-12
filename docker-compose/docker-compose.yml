@@ -1,0 +1,147 @@
+version: '3.8'
+
+# Объединённая конфигурация всех сервисов инфраструктуры
+# Использование: docker-compose up -d
+
+services:
+  # Redis - кэш и очередь задач
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-change-me-redis-password} --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - infrastructure-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-change-me-redis-password}
+
+  # Supabase - PostgreSQL база данных
+  supabase_db:
+    image: supabase/postgres:15.1.0.117
+    container_name: supabase_db
+    restart: unless-stopped
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+      - ./supabase/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - infrastructure-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Supabase Studio (опционально)
+  supabase_studio:
+    image: supabase/studio:20240415-88f6a14
+    container_name: supabase_studio
+    restart: unless-stopped
+    ports:
+      - "54323:3000"
+    environment:
+      STUDIO_PG_META_URL: http://supabase_meta:8080
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      DEFAULT_ORGANIZATION_NAME: ${SUPABASE_ORG_NAME:-Default Org}
+      DEFAULT_PROJECT_NAME: ${SUPABASE_PROJECT_NAME:-Default Project}
+    networks:
+      - infrastructure-network
+    depends_on:
+      - supabase_db
+
+  # n8n - платформа автоматизации
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-true}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-change-me-n8n-password}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=supabase_db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=postgres
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD:-change-me-redis-password}
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      - N8N_METRICS=${N8N_METRICS:-true}
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks:
+      - infrastructure-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      supabase_db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # n8n Worker - обработчик задач
+  n8n-worker:
+    image: n8nio/n8n:latest
+    container_name: n8n-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=supabase_db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=postgres
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD:-change-me-redis-password}
+      - N8N_WORKERS_ENABLED=true
+      - N8N_WORKERS_COUNT=${N8N_WORKERS_COUNT:-2}
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+    networks:
+      - infrastructure-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      supabase_db:
+        condition: service_healthy
+      n8n:
+        condition: service_healthy
+
+volumes:
+  redis-data:
+    driver: local
+  supabase-db-data:
+    driver: local
+  n8n-data:
+    driver: local
+
+networks:
+  infrastructure-network:
+    driver: bridge
+    name: infrastructure-network

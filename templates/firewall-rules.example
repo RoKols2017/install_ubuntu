@@ -1,0 +1,116 @@
+# Пример правил firewall для UFW
+# Использование: скопируйте нужные правила и выполните через sudo ufw
+
+# ============================================
+# БАЗОВЫЕ ПРАВИЛА
+# ============================================
+
+# Разрешить SSH (ВАЖНО: сделать первым!)
+sudo ufw allow 22/tcp comment 'SSH'
+
+# Если изменили порт SSH, используйте новый порт
+# sudo ufw allow 2222/tcp comment 'SSH Custom Port'
+
+# Разрешить HTTP и HTTPS
+sudo ufw allow 80/tcp comment 'HTTP'
+sudo ufw allow 443/tcp comment 'HTTPS'
+
+# ============================================
+# ПРАВИЛА ДЛЯ ИНФРАСТРУКТУРЫ
+# ============================================
+
+# n8n Web Interface
+sudo ufw allow 5678/tcp comment 'n8n Web UI'
+
+# Supabase
+sudo ufw allow 54321/tcp comment 'Supabase API'
+sudo ufw allow 54322/tcp comment 'Supabase PostgreSQL'
+sudo ufw allow 54323/tcp comment 'Supabase Studio'
+
+# Redis (рекомендуется только для внутренней сети)
+# sudo ufw allow from 10.0.0.0/8 to any port 6379 comment 'Redis Internal'
+
+# ============================================
+# ОГРАНИЧЕНИЯ ПО IP (РЕКОМЕНДУЕТСЯ)
+# ============================================
+
+# Разрешить SSH только с определённого IP
+# sudo ufw allow from YOUR_IP_ADDRESS to any port 22 comment 'SSH from office'
+
+# Разрешить доступ к n8n только с определённого IP
+# sudo ufw allow from YOUR_IP_ADDRESS to any port 5678 comment 'n8n from office'
+
+# ============================================
+# RATE LIMITING
+# ============================================
+
+# Ограничить количество подключений к SSH
+sudo ufw limit 22/tcp comment 'SSH Rate Limit'
+
+# ============================================
+# БЛОКИРОВКА
+# ============================================
+
+# Заблокировать определённый IP
+# sudo ufw deny from BAD_IP_ADDRESS
+
+# ============================================
+# ПРИМЕРЫ КОМАНД
+# ============================================
+
+# Просмотр правил
+# sudo ufw status verbose
+
+# Просмотр правил с номерами (для удаления)
+# sudo ufw status numbered
+
+# Удаление правила по номеру
+# sudo ufw delete NUMBER
+
+# Включение firewall
+# sudo ufw enable
+
+# Отключение firewall (не рекомендуется)
+# sudo ufw disable
+
+# Сброс всех правил
+# sudo ufw reset
+
+# ============================================
+# РЕКОМЕНДУЕМАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ
+# ============================================
+
+# 1. Разрешить SSH
+sudo ufw allow 22/tcp
+
+# 2. Включить firewall
+sudo ufw enable
+
+# 3. Добавить остальные правила
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 5678/tcp
+
+# 4. Проверить статус
+sudo ufw status verbose
+
+# ============================================
+# ПРИМЕР КОНФИГУРАЦИИ ДЛЯ PRODUCTION
+# ============================================
+
+# SSH только с офисного IP
+# sudo ufw allow from 192.168.1.100 to any port 22
+
+# HTTP/HTTPS для всех
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# n8n только с офисного IP
+# sudo ufw allow from 192.168.1.100 to any port 5678
+
+# Supabase только для внутренней сети
+# sudo ufw allow from 10.0.0.0/8 to any port 54321
+# sudo ufw allow from 10.0.0.0/8 to any port 54322
+
+# Включить firewall
+sudo ufw enable
