@@ -90,14 +90,9 @@ fi
 log_info "Шаг 4: Установка и настройка fail2ban..."
 apt install -y fail2ban
 
-# Создаём локальную конфигурацию, если её нет
-if [ ! -f /etc/fail2ban/jail.local ]; then
-    cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-fi
-
-# Настраиваем базовые параметры
-cat >> /etc/fail2ban/jail.local <<EOF
-
+# Создаём локальную конфигурацию с минимальными настройками
+# Переопределяем только необходимые параметры
+cat > /etc/fail2ban/jail.local <<EOF
 [DEFAULT]
 bantime = 3600
 findtime = 600
@@ -110,9 +105,18 @@ logpath = %(sshd_log)s
 backend = %(sshd_backend)s
 EOF
 
+# Включаем и запускаем fail2ban
 systemctl enable fail2ban
 systemctl restart fail2ban
-log_info "fail2ban установлен и запущен"
+
+# Проверяем, что сервис запущен
+sleep 2
+if systemctl is-active --quiet fail2ban; then
+    log_info "fail2ban установлен и запущен"
+else
+    log_error "fail2ban не запустился. Проверьте логи: journalctl -u fail2ban"
+    systemctl status fail2ban --no-pager || true
+fi
 
 # Шаг 5: Настройка автоматических обновлений
 log_info "Шаг 5: Настройка автоматических обновлений безопасности..."
@@ -188,7 +192,12 @@ ufw status verbose
 
 echo ""
 log_info "=== Статус fail2ban ==="
-fail2ban-client status
+if systemctl is-active --quiet fail2ban; then
+    fail2ban-client status || true
+else
+    log_warn "fail2ban не запущен. Запустите: sudo systemctl start fail2ban"
+    log_warn "Проверьте логи: sudo journalctl -u fail2ban -n 50"
+fi
 
 echo ""
 log_info "=== Статус автоматических обновлений ==="
