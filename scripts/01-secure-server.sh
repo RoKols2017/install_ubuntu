@@ -161,7 +161,14 @@ log_info "Настройки sysctl применены"
 
 # Шаг 7: Установка logwatch
 log_info "Шаг 7: Установка logwatch..."
-apt install -y logwatch
+
+# Настраиваем debconf для postfix (зависимость logwatch)
+# Выбираем "No configuration" - почтовый сервер не нужен, logwatch будет работать локально
+echo "postfix postfix/mailname string $(hostname -f)" | debconf-set-selections
+echo "postfix postfix/main_mailer_type string 'No configuration'" | debconf-set-selections
+
+# Устанавливаем logwatch без интерактивных запросов
+DEBIAN_FRONTEND=noninteractive apt install -y logwatch
 
 # Настраиваем ежедневные отчёты
 cat > /etc/cron.daily/00logwatch <<'EOF'
@@ -199,3 +206,4 @@ log_warn "3. Рекомендуется изменить порт SSH (см. д�
 log_warn "4. Измените все дефолтные пароли"
 
 log_info "Настройка безопасности завершена!"
+
