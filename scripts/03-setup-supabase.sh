@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Скрипт установки Supabase (Self-hosted)
+# Скрипт установки Supabase (Self-hosted через Docker Compose)
 # Требует Docker и Docker Compose
 
 set -euo pipefail
@@ -35,74 +35,73 @@ if ! docker compose version &> /dev/null; then
     exit 1
 fi
 
-log_info "Начинаем установку Supabase..."
+log_info "Начинаем установку Supabase через Docker Compose..."
 
-# Создаём директорию для проекта
-SUPABASE_DIR="$HOME/supabase"
-mkdir -p "$SUPABASE_DIR"
-cd "$SUPABASE_DIR"
+# Определяем путь к директории проекта (где находится docker-compose.yml)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+COMPOSE_DIR="$PROJECT_ROOT/docker-compose"
 
-# Проверяем, установлен ли Supabase CLI
-if ! command -v supabase &> /dev/null; then
-    log_info "Установка Supabase CLI через Docker..."
-    # Используем Docker для запуска Supabase CLI
-    alias supabase="docker run --rm -it -v $(pwd):/workspace -w /workspace supabase/cli:latest"
-    log_info "Supabase CLI будет использоваться через Docker"
+# Проверяем наличие docker-compose.yml
+if [ ! -f "$COMPOSE_DIR/docker-compose.yml" ]; then
+    log_error "Файл docker-compose.yml не найден в $COMPOSE_DIR"
+    exit 1
 fi
 
-# Инициализация проекта (если ещё не инициализирован)
-if [ ! -f "config.toml" ]; then
-    log_info "Инициализация проекта Supabase..."
-    
-    # Создаём базовую конфигурацию
-    cat > config.toml <<'EOF'
-[project]
-name = "supabase-project"
+cd "$COMPOSE_DIR"
 
-[auth]
-site_url = "http://localhost:3000"
-additional_redirect_urls = []
-
-[api]
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-
-[db]
-port = 54322
-password = "your-super-secret-password-CHANGE-ME"
-EOF
-    
-    log_warn "Создан файл config.toml. Пожалуйста, измените пароль БД!"
-    log_warn "Редактируйте: $SUPABASE_DIR/config.toml"
-    
-    read -p "Нажмите Enter после изменения пароля в config.toml, или Ctrl+C для отмены..."
+# Проверяем наличие .env файла
+if [ ! -f ".env" ]; then
+    log_warn "Файл .env не найден. Создаём из примера..."
+    if [ -f "env.example" ]; then
+        cp env.example .env
+        log_warn "Создан файл .env из env.example"
+        log_warn "ВАЖНО: Отредактируйте .env и измените пароли перед продолжением!"
+        log_warn "Файл: $COMPOSE_DIR/.env"
+        read -p "Нажмите Enter после изменения паролей в .env, или Ctrl+C для отмены..."
+    else
+        log_error "Файл env.example не найден!"
+        exit 1
+    fi
 fi
 
-# Запуск Supabase
-log_info "Запуск Supabase..."
-if command -v supabase &> /dev/null && ! command supabase | grep -q docker; then
-    supabase start
+# Запуск сервиса Supabase PostgreSQL
+log_info "Запуск Supabase PostgreSQL..."
+docker compose up -d supabase_db
+
+# Ожидание готовности БД
+log_info "Ожидание готовности базы данных..."
+sleep 5
+
+# Проверка статуса
+if docker compose ps supabase_db | grep -q "Up"; then
+    log_info "Supabase PostgreSQL запущен"
 else
-    # Используем Docker для запуска Supabase
-    docker run --rm -it \
-        -v "$(pwd):/workspace" \
-        -w /workspace \
-        supabase/cli:latest start
+    log_error "Не удалось запустить Supabase PostgreSQL"
+    docker compose logs supabase_db
+    exit 1
 fi
-
-log_info "Supabase запущен!"
 
 # Выводим информацию о подключении
 log_info "=== Информация о подключении ==="
-if command -v supabase &> /dev/null && ! command supabase | grep -q docker; then
-    supabase status
+echo ""
+log_info "PostgreSQL:"
+log_info "  Хост: localhost"
+log_info "  Порт: 54322"
+log_info "  База данных: postgres"
+log_info "  Пользователь: postgres"
+log_info "  Пароль: см. в файле .env (SUPABASE_DB_PASSWORD)"
+echo ""
+log_warn "Примечание: Supabase Studio требует дополнительной настройки и не включён в этот скрипт"
+echo ""
+
+# Проверка подключения к БД
+log_info "Проверка подключения к базе данных..."
+if docker compose exec -T supabase_db pg_isready -U postgres > /dev/null 2>&1; then
+    log_info "Подключение к базе данных успешно!"
 else
-    docker run --rm -it \
-        -v "$(pwd):/workspace" \
-        -w /workspace \
-        supabase/cli:latest status
+    log_warn "Не удалось проверить подключение к базе данных"
 fi
 
 log_info "Установка Supabase завершена!"
-log_warn "Не забудьте сохранить API ключи и пароли!"
+log_warn "Не забудьте сохранить пароли из файла .env!"
