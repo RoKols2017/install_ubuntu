@@ -24,6 +24,12 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Функция генерации безопасного пароля
+generate_password() {
+    # Генерируем пароль длиной 32 символа из букв, цифр и спецсимволов
+    openssl rand -base64 24 | tr -d "=+/" | cut -c1-32
+}
+
 # Проверка Docker
 if ! command -v docker &> /dev/null; then
     log_error "Docker не установлен. Установите Docker сначала."
@@ -52,13 +58,22 @@ cd "$COMPOSE_DIR"
 
 # Проверяем наличие .env файла
 if [ ! -f ".env" ]; then
-    log_warn "Файл .env не найден. Создаём из примера..."
+    log_info "Файл .env не найден. Создаём с автоматически сгенерированными паролями..."
     if [ -f "env.example" ]; then
-        cp env.example .env
-        log_warn "Создан файл .env из env.example"
-        log_warn "ВАЖНО: Отредактируйте .env и измените пароли перед продолжением!"
-        log_warn "Файл: $COMPOSE_DIR/.env"
-        read -p "Нажмите Enter после изменения паролей в .env, или Ctrl+C для отмены..."
+        # Генерируем пароли
+        REDIS_PASSWORD=$(generate_password)
+        SUPABASE_PASSWORD=$(generate_password)
+        N8N_PASSWORD=$(generate_password)
+        
+        # Создаём .env файл с сгенерированными паролями
+        sed -e "s/your-secure-redis-password-here/${REDIS_PASSWORD}/" \
+            -e "s/your-secure-supabase-password-here/${SUPABASE_PASSWORD}/" \
+            -e "s/your-secure-n8n-password-here/${N8N_PASSWORD}/" \
+            env.example > .env
+        
+        log_info "Файл .env создан с автоматически сгенерированными паролями"
+        log_warn "ВАЖНО: Сохраните пароли из файла .env в безопасном месте!"
+        log_info "Файл: $COMPOSE_DIR/.env"
     else
         log_error "Файл env.example не найден!"
         exit 1
@@ -104,4 +119,7 @@ else
 fi
 
 log_info "Установка Supabase завершена!"
-log_warn "Не забудьте сохранить пароли из файла .env!"
+echo ""
+log_warn "=== ВАЖНО: Сохраните пароли ==="
+log_info "Пароли сохранены в файле: $COMPOSE_DIR/.env"
+log_info "Для просмотра паролей выполните: cat $COMPOSE_DIR/.env | grep PASSWORD"
