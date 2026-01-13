@@ -34,15 +34,25 @@ log_info "Начинаем установку Docker и Docker Compose..."
 
 # Шаг 0: Очистка старых источников Docker (ВАЖНО: до apt update!)
 log_info "Шаг 0: Очистка старых источников Docker..."
-# Удаляем все возможные источники Docker
-rm -f /etc/apt/sources.list.d/docker.list
-rm -f /etc/apt/sources.list.d/docker.list.save
+# Удаляем все файлы источников Docker в sources.list.d
+rm -f /etc/apt/sources.list.d/docker*.list
+rm -f /etc/apt/sources.list.d/docker*.list.save
+# Находим и очищаем все файлы, содержащие упоминания Docker
+find /etc/apt/sources.list.d/ -type f -name "*.list" -exec grep -l "download\.docker\.com" {} \; 2>/dev/null | xargs rm -f 2>/dev/null || true
+# Удаляем записи Docker из основного файла sources.list (если есть)
+sed -i '/download\.docker\.com/d' /etc/apt/sources.list 2>/dev/null || true
 # Удаляем старые ключевые файлы
 rm -f /etc/apt/keyrings/docker.gpg
 rm -f /etc/apt/keyrings/docker.asc
 rm -f /usr/share/keyrings/docker-archive-keyring.gpg
+rm -f /usr/share/keyrings/docker.gpg
+# Удаляем все возможные ключевые файлы Docker
+find /etc/apt/keyrings /usr/share/keyrings -name "*docker*" -type f 2>/dev/null | xargs rm -f 2>/dev/null || true
 # Удаляем старые ключи из apt-key (устаревший метод)
-apt-key del 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 2>/dev/null || true
+apt-key list 2>/dev/null | grep -B1 "Docker" | grep "^pub" | awk '{print $2}' | cut -d'/' -f2 | xargs -I {} apt-key del {} 2>/dev/null || true
+# Очищаем кэш apt
+apt clean 2>/dev/null || true
+rm -rf /var/lib/apt/lists/*download.docker.com* 2>/dev/null || true
 log_info "Старые источники Docker очищены"
 
 # Шаг 1: Удаление старых версий Docker (если есть)
