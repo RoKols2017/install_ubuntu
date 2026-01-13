@@ -24,6 +24,12 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Функция генерации безопасного пароля
+generate_password() {
+    # Генерируем пароль длиной 32 символа из букв, цифр и спецсимволов
+    openssl rand -base64 24 | tr -d "=+/" | cut -c1-32
+}
+
 # Проверка Docker
 if ! command -v docker &> /dev/null; then
     log_error "Docker не установлен. Установите Docker сначала."
@@ -48,41 +54,47 @@ mkdir -p "$N8N_COMPOSE_DIR"
 
 # Создаём .env файл, если его нет
 if [ ! -f "$N8N_COMPOSE_DIR/.env" ]; then
-    log_info "Создание файла .env..."
-    cat > "$N8N_COMPOSE_DIR/.env" <<'EOF'
-# Базовые настройки
-N8N_BASIC_AUTH_ACTIVE=true
-N8N_BASIC_AUTH_USER=admin
-N8N_BASIC_AUTH_PASSWORD=change-me-secure-password
-
-# База данных PostgreSQL (Supabase)
-DB_TYPE=postgresdb
-DB_POSTGRESDB_HOST=supabase_db
-DB_POSTGRESDB_PORT=5432
-DB_POSTGRESDB_DATABASE=postgres
-DB_POSTGRESDB_USER=postgres
-DB_POSTGRESDB_PASSWORD=your-supabase-password
-
-# Redis для очередей
-QUEUE_BULL_REDIS_HOST=redis
-QUEUE_BULL_REDIS_PORT=6379
-QUEUE_BULL_REDIS_PASSWORD=your-redis-password
-
-# Настройки воркера
-N8N_WORKERS_ENABLED=true
-N8N_WORKERS_COUNT=2
-
-# Webhook URL
-WEBHOOK_URL=http://localhost:5678/
-
-# Дополнительные настройки
-N8N_METRICS=true
-N8N_LOG_LEVEL=info
-EOF
+    log_info "Создание файла .env с автоматически сгенерированными паролями..."
     
-    log_warn "Создан файл .env. Пожалуйста, измените пароли!"
-    log_warn "Редактируйте: $N8N_COMPOSE_DIR/.env"
-    read -p "Нажмите Enter после изменения паролей, или Ctrl+C для отмены..."
+    if [ -f "$N8N_COMPOSE_DIR/env.example" ]; then
+        # Пытаемся подтянуть пароли из основного .env файла (если есть)
+        MAIN_ENV_FILE="$PROJECT_DIR/docker-compose/.env"
+        if [ -f "$MAIN_ENV_FILE" ]; then
+            log_info "Используем пароли из основного .env файла..."
+            SUPABASE_PASSWORD=$(grep "^SUPABASE_DB_PASSWORD=" "$MAIN_ENV_FILE" | cut -d'=' -f2 || echo "")
+            REDIS_PASSWORD=$(grep "^REDIS_PASSWORD=" "$MAIN_ENV_FILE" | cut -d'=' -f2 || echo "")
+        else
+            SUPABASE_PASSWORD=""
+            REDIS_PASSWORD=""
+        fi
+        
+        # Генерируем пароли, если они не были найдены
+        if [ -z "$SUPABASE_PASSWORD" ]; then
+            SUPABASE_PASSWORD=$(generate_password)
+            log_warn "Пароль для Supabase не найден в основном .env, сгенерирован новый"
+        fi
+        
+        if [ -z "$REDIS_PASSWORD" ]; then
+            REDIS_PASSWORD=$(generate_password)
+            log_warn "Пароль для Redis не найден в основном .env, сгенерирован новый"
+        fi
+        
+        # Генерируем пароль для n8n
+        N8N_PASSWORD=$(generate_password)
+        
+        # Создаём .env файл на основе env.example
+        sed -e "s/your-secure-password-here/${N8N_PASSWORD}/" \
+            -e "s/your-supabase-password-here/${SUPABASE_PASSWORD}/" \
+            -e "s/your-redis-password-here/${REDIS_PASSWORD}/" \
+            "$N8N_COMPOSE_DIR/env.example" > "$N8N_COMPOSE_DIR/.env"
+        
+        log_info "Файл .env создан с автоматически сгенерированными паролями"
+    else
+        log_error "Файл env.example не найден в $N8N_COMPOSE_DIR"
+        exit 1
+    fi
+else
+    log_info "Файл .env уже существует"
 fi
 
 # Создаём docker-compose.yml
@@ -157,3 +169,4 @@ docker logs n8n-worker --tail 20
 log_info "Установка n8n завершена!"
 log_info "Откройте в браузере: http://localhost:5678"
 log_warn "Используйте логин и пароль из файла .env"
+
