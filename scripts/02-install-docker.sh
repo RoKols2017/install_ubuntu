@@ -32,6 +32,19 @@ fi
 
 log_info "Начинаем установку Docker и Docker Compose..."
 
+# Шаг 0: Очистка старых источников Docker (ВАЖНО: до apt update!)
+log_info "Шаг 0: Очистка старых источников Docker..."
+# Удаляем все возможные источники Docker
+rm -f /etc/apt/sources.list.d/docker.list
+rm -f /etc/apt/sources.list.d/docker.list.save
+# Удаляем старые ключевые файлы
+rm -f /etc/apt/keyrings/docker.gpg
+rm -f /etc/apt/keyrings/docker.asc
+rm -f /usr/share/keyrings/docker-archive-keyring.gpg
+# Удаляем старые ключи из apt-key (устаревший метод)
+apt-key del 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 2>/dev/null || true
+log_info "Старые источники Docker очищены"
+
 # Шаг 1: Удаление старых версий Docker (если есть)
 log_info "Шаг 1: Проверка и удаление старых версий Docker..."
 if command -v docker &> /dev/null; then
@@ -49,27 +62,15 @@ apt install -y \
     gnupg \
     lsb-release
 
-# Шаг 3: Очистка старых источников Docker
-log_info "Шаг 3: Очистка старых источников Docker..."
-# Удаляем все возможные источники Docker
-rm -f /etc/apt/sources.list.d/docker.list
-rm -f /etc/apt/sources.list.d/docker.list.save
-# Удаляем старые ключевые файлы
-rm -f /etc/apt/keyrings/docker.gpg
-rm -f /etc/apt/keyrings/docker.asc
-rm -f /usr/share/keyrings/docker-archive-keyring.gpg
-# Удаляем старые ключи из apt-key (устаревший метод)
-apt-key del 9DC858229FC7DD38854AE2D88D81803C0EBFCD88 2>/dev/null || true
-
-# Шаг 4: Добавление официального GPG ключа Docker
-log_info "Шаг 4: Добавление официального GPG ключа Docker..."
+# Шаг 3: Добавление официального GPG ключа Docker
+log_info "Шаг 3: Добавление официального GPG ключа Docker..."
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 chmod a+r /etc/apt/keyrings/docker.gpg
 log_info "GPG ключ Docker добавлен"
 
-# Шаг 5: Добавление репозитория Docker
-log_info "Шаг 5: Добавление репозитория Docker..."
+# Шаг 4: Добавление репозитория Docker
+log_info "Шаг 4: Добавление репозитория Docker..."
 ARCH=$(dpkg --print-architecture)
 CODENAME=$(lsb_release -cs)
 
@@ -78,15 +79,15 @@ echo \
   ${CODENAME} stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 log_info "Репозиторий Docker добавлен"
 
-# Шаг 6: Установка Docker Engine и Docker Compose
-log_info "Шаг 6: Установка Docker Engine и Docker Compose..."
+# Шаг 5: Установка Docker Engine и Docker Compose
+log_info "Шаг 5: Установка Docker Engine и Docker Compose..."
 apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 log_info "Docker установлен успешно"
 
-# Шаг 7: Настройка Docker для работы без sudo
-log_info "Шаг 7: Настройка Docker для работы без sudo..."
+# Шаг 6: Настройка Docker для работы без sudo
+log_info "Шаг 6: Настройка Docker для работы без sudo..."
 CURRENT_USER=${SUDO_USER:-$USER}
 if [ "$CURRENT_USER" != "root" ]; then
     if ! groups "$CURRENT_USER" | grep -q docker; then
@@ -101,14 +102,14 @@ else
     log_warn "  sudo usermod -aG docker <username>"
 fi
 
-# Шаг 8: Настройка автозапуска Docker
-log_info "Шаг 8: Настройка автозапуска Docker..."
+# Шаг 7: Настройка автозапуска Docker
+log_info "Шаг 7: Настройка автозапуска Docker..."
 systemctl enable docker
 systemctl start docker
 log_info "Docker настроен на автозапуск"
 
-# Шаг 9: Проверка установки
-log_info "Шаг 9: Проверка установки..."
+# Шаг 8: Проверка установки
+log_info "Шаг 8: Проверка установки..."
 
 # Проверка версии Docker
 if command -v docker &> /dev/null; then
@@ -136,8 +137,8 @@ else
     log_warn "Не удалось запустить тестовый контейнер (возможно, требуется перелогиниться)"
 fi
 
-# Шаг 10: Настройка Docker daemon
-log_info "Шаг 10: Настройка Docker daemon..."
+# Шаг 9: Настройка Docker daemon
+log_info "Шаг 9: Настройка Docker daemon..."
 
 # Создаём директорию для конфигурации, если её нет
 mkdir -p /etc/docker
