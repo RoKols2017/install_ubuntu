@@ -26,21 +26,42 @@ log_error() {
 
 log_info "Начинаем настройку векторной БД (pgvector)..."
 
-# Запрашиваем параметры подключения
-read -p "Хост PostgreSQL [localhost]: " DB_HOST
-DB_HOST=${DB_HOST:-localhost}
+# Определяем путь к директории проекта
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+COMPOSE_DIR="$PROJECT_ROOT/docker-compose"
 
-read -p "Порт PostgreSQL [54322]: " DB_PORT
-DB_PORT=${DB_PORT:-54322}
+# Параметры подключения по умолчанию для Supabase
+DB_HOST="localhost"
+DB_PORT="54322"
+DB_NAME="postgres"
+DB_USER="postgres"
 
-read -p "Имя базы данных [postgres]: " DB_NAME
-DB_NAME=${DB_NAME:-postgres}
-
-read -p "Пользователь [postgres]: " DB_USER
-DB_USER=${DB_USER:-postgres}
-
-read -sp "Пароль: " DB_PASSWORD
-echo ""
+# Пытаемся прочитать пароль из .env файла
+if [ -f "$COMPOSE_DIR/.env" ]; then
+    DB_PASSWORD=$(grep "^SUPABASE_DB_PASSWORD=" "$COMPOSE_DIR/.env" | cut -d'=' -f2 || echo "")
+    if [ -n "$DB_PASSWORD" ]; then
+        log_info "Параметры подключения загружены из .env файла"
+    else
+        log_warn "Переменная SUPABASE_DB_PASSWORD не найдена в .env, запрашиваем вручную..."
+        read -sp "Пароль PostgreSQL: " DB_PASSWORD
+        echo ""
+    fi
+else
+    log_warn "Файл .env не найден в $COMPOSE_DIR, запрашиваем параметры вручную..."
+    log_warn "Рекомендуется сначала запустить скрипт установки Supabase (03-setup-supabase.sh)"
+    echo ""
+    read -p "Хост PostgreSQL [localhost]: " DB_HOST_INPUT
+    DB_HOST=${DB_HOST_INPUT:-localhost}
+    read -p "Порт PostgreSQL [54322]: " DB_PORT_INPUT
+    DB_PORT=${DB_PORT_INPUT:-54322}
+    read -p "Имя базы данных [postgres]: " DB_NAME_INPUT
+    DB_NAME=${DB_NAME_INPUT:-postgres}
+    read -p "Пользователь [postgres]: " DB_USER_INPUT
+    DB_USER=${DB_USER_INPUT:-postgres}
+    read -sp "Пароль: " DB_PASSWORD
+    echo ""
+fi
 
 # Проверяем подключение
 log_info "Проверка подключения к базе данных..."
@@ -177,3 +198,4 @@ log_warn "    10                                 -- количество рез�
 log_warn "  );"
 
 log_info "Настройка векторной БД завершена!"
+
