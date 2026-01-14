@@ -13,16 +13,16 @@ Redis используется как кэш и очередь задач для
 # Используя скрипт (рекомендуется)
 sudo bash scripts/05-setup-redis.sh
 
-# Или вручную через docker-compose
-cd docker-compose/redis
-docker compose up -d
+# Или вручную через основной docker-compose.yml
+cd docker-compose
+docker compose up -d redis
 ```
 
 ## Шаг 2: Настройка пароля Redis
 
-Скрипт автоматически генерирует пароль и сохраняет его в `.env` файл.
+Скрипт автоматически генерирует пароль и сохраняет его в основной `.env` файл (`docker-compose/.env`).
 
-Если устанавливаете вручную, создайте `.env` файл:
+Если устанавливаете вручную, убедитесь, что в файле `docker-compose/.env` есть переменная:
 
 ```bash
 REDIS_PASSWORD=your-secure-redis-password
@@ -56,7 +56,7 @@ Redis настроен на AOF (Append Only File) для персистентн
 
 ### Настройка памяти
 
-По умолчанию установлен лимит 512 MB. Для изменения отредактируйте `docker-compose.yml`:
+По умолчанию установлен лимит 512 MB. Для изменения отредактируйте основной `docker-compose/docker-compose.yml`:
 
 ```yaml
 command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
@@ -156,3 +156,4 @@ docker exec redis redis-cli -a YOUR_PASSWORD FLUSHDB  # ОСТОРОЖНО!
 
 - [Официальная документация Redis](https://redis.io/docs/)
 - [Redis Best Practices](https://redis.io/docs/manual/patterns/)
+
