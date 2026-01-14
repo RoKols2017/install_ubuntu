@@ -26,6 +26,12 @@ log_error() {
 
 log_info "Начинаем настройку векторной БД (pgvector)..."
 
+# Проверка наличия psql
+if ! command -v psql &> /dev/null; then
+    log_error "psql не установлен. Установите PostgreSQL client: sudo apt install postgresql-client"
+    exit 1
+fi
+
 # Определяем путь к директории проекта
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -39,7 +45,8 @@ DB_USER="postgres"
 
 # Пытаемся прочитать пароль из .env файла
 if [ -f "$COMPOSE_DIR/.env" ]; then
-    DB_PASSWORD=$(grep "^SUPABASE_DB_PASSWORD=" "$COMPOSE_DIR/.env" | cut -d'=' -f2 || echo "")
+    # Читаем пароль, удаляя кавычки и пробелы
+    DB_PASSWORD=$(grep "^SUPABASE_DB_PASSWORD=" "$COMPOSE_DIR/.env" 2>/dev/null | cut -d'=' -f2- | sed "s/^[\"']//;s/[\"']$//" | xargs || echo "")
     if [ -n "$DB_PASSWORD" ]; then
         log_info "Параметры подключения загружены из .env файла"
     else
@@ -65,10 +72,25 @@ fi
 
 # Проверяем подключение
 log_info "Проверка подключения к базе данных..."
+log_info "  Хост: $DB_HOST"
+log_info "  Порт: $DB_PORT"
+log_info "  База данных: $DB_NAME"
+log_info "  Пользователь: $DB_USER"
+
 export PGPASSWORD="$DB_PASSWORD"
 
-if ! psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" &> /dev/null; then
-    log_error "Не удалось подключиться к базе данных. Проверьте параметры подключения."
+# Пытаемся подключиться
+PSQL_OUTPUT=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" 2>&1)
+PSQL_EXIT_CODE=$?
+
+if [ $PSQL_EXIT_CODE -ne 0 ]; then
+    log_error "Не удалось подключиться к базе данных."
+    log_error "Ошибка: $PSQL_OUTPUT"
+    log_error ""
+    log_error "Проверьте:"
+    log_error "  1. Запущен ли контейнер supabase_db: docker ps | grep supabase_db"
+    log_error "  2. Правильность пароля в файле $COMPOSE_DIR/.env (SUPABASE_DB_PASSWORD)"
+    log_error "  3. Доступность порта $DB_PORT: sudo netstat -tlnp | grep $DB_PORT"
     exit 1
 fi
 
