@@ -77,7 +77,12 @@ log_info "  Порт: $DB_PORT"
 log_info "  База данных: $DB_NAME"
 log_info "  Пользователь: $DB_USER"
 
-export PGPASSWORD="$DB_PASSWORD"
+# Используем временный PGPASSFILE, чтобы не светить пароль в окружении
+PGPASS_FILE=$(mktemp)
+chmod 600 "$PGPASS_FILE"
+echo "$DB_HOST:$DB_PORT:$DB_NAME:$DB_USER:$DB_PASSWORD" > "$PGPASS_FILE"
+export PGPASSFILE="$PGPASS_FILE"
+trap 'rm -f "$PGPASS_FILE"' EXIT
 
 # Пытаемся подключиться
 PSQL_OUTPUT=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" 2>&1)
@@ -106,97 +111,16 @@ else
     log_info "Расширение pgvector установлено"
 fi
 
-# Создаём SQL скрипт для инициализации
-SQL_SCRIPT=$(mktemp)
-cat > "$SQL_SCRIPT" <<'SQL'
--- Создаём таблицу для хранения документов с эмбеддингами
-CREATE TABLE IF NOT EXISTS documents (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  content TEXT NOT NULL,
-  embedding vector(1536),  -- Размерность для OpenAI embeddings
-  metadata JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Создаём индекс для векторного поиска (HNSW)
-CREATE INDEX IF NOT EXISTS documents_embedding_idx ON documents 
-USING hnsw (embedding vector_cosine_ops)
-WITH (m = 16, ef_construction = 64);
-
--- Функция для поиска похожих документов
-CREATE OR REPLACE FUNCTION match_documents(
-  query_embedding vector(1536),
-  match_threshold float DEFAULT 0.7,
-  match_count int DEFAULT 10
-)
-RETURNS TABLE (
-  id UUID,
-  content TEXT,
-  similarity float,
-  metadata JSONB,
-  created_at TIMESTAMPTZ
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    documents.id,
-    documents.content,
-    1 - (documents.embedding <=> query_embedding) as similarity,
-    documents.metadata,
-    documents.created_at
-  FROM documents
-  WHERE documents.embedding IS NOT NULL
-    AND 1 - (documents.embedding <=> query_embedding) > match_threshold
-  ORDER BY documents.embedding <=> query_embedding
-  LIMIT match_count;
-END;
-$$;
-
--- Функция для обновления updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Триггер для автоматического обновления updated_at
-DROP TRIGGER IF EXISTS update_documents_updated_at ON documents;
-CREATE TRIGGER update_documents_updated_at
-    BEFORE UPDATE ON documents
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Создаём таблицу для хранения сессий чата (опционально)
-CREATE TABLE IF NOT EXISTS chat_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT,
-  messages JSONB DEFAULT '[]'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Индекс для поиска сессий по пользователю
-CREATE INDEX IF NOT EXISTS chat_sessions_user_id_idx ON chat_sessions(user_id);
-
--- Триггер для обновления updated_at в chat_sessions
-DROP TRIGGER IF EXISTS update_chat_sessions_updated_at ON chat_sessions;
-CREATE TRIGGER update_chat_sessions_updated_at
-    BEFORE UPDATE ON chat_sessions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-SQL
+# Используем единый SQL файл как источник истины
+SQL_SCRIPT="$COMPOSE_DIR/supabase/init.sql"
+if [ ! -f "$SQL_SCRIPT" ]; then
+  log_error "SQL файл не найден: $SQL_SCRIPT"
+  exit 1
+fi
 
 # Выполняем SQL скрипт
 log_info "Создание таблиц и функций..."
 psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$SQL_SCRIPT"
-
-# Удаляем временный файл
-rm "$SQL_SCRIPT"
 
 # Проверяем созданные объекты
 log_info "Проверка созданных объектов..."

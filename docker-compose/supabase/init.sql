@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS documents (
 -- Создаём индекс для векторного поиска (HNSW)
 CREATE INDEX IF NOT EXISTS documents_embedding_idx ON documents 
 USING hnsw (embedding vector_cosine_ops)
-WITH (m = 16, ef_construction = 64);
+WITH (m = 24, ef_construction = 128);
 
 -- Функция для поиска похожих документов
 CREATE OR REPLACE FUNCTION match_documents(

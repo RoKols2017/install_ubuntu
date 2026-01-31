@@ -39,8 +39,11 @@
 | Supabase API | 54321 | TCP | Supabase API Gateway |
 | Supabase DB | 54322 | TCP | PostgreSQL |
 | Supabase Studio | 54323 | TCP | Supabase Dashboard |
+| PgBouncer | 6432 | TCP | PostgreSQL connection pool |
 | n8n | 5678 | TCP | n8n Web Interface |
 | Redis | 6379 | TCP | Redis Server |
+| Prometheus | 9090 | TCP | Metrics |
+| Grafana | 3000 | TCP | Dashboards |
 | Nginx (опционально) | 80, 443 | TCP | Reverse Proxy |
 
 ### Firewall

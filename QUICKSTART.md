@@ -8,6 +8,7 @@
 - Минимум 4 GB RAM (рекомендуется 8 GB+)
 - 50 GB свободного места
 - Права root или sudo
+- Для локальных серверов с новым железом: см. [драйверы и совместимость](docs/08-hardware-drivers.md)
 
 ## Шаг 1: Клонирование/копирование проекта
 
@@ -56,6 +57,9 @@ nano .env
 - `REDIS_PASSWORD` - пароль для Redis
 - `SUPABASE_DB_PASSWORD` - пароль для PostgreSQL
 - `N8N_BASIC_AUTH_PASSWORD` - пароль для n8n
+- `N8N_ENCRYPTION_KEY` - ключ шифрования n8n
+- `N8N_USER_MANAGEMENT_JWT_SECRET` - JWT секрет n8n
+- `GRAFANA_PASSWORD` - пароль Grafana
 
 ## Шаг 5: Запуск инфраструктуры
 
@@ -74,14 +78,18 @@ docker compose ps
 docker compose logs -f
 ```
 
+Примечание:
+- Порты PostgreSQL/Redis/Studio доступны только на `127.0.0.1`.
+- Для внешнего доступа используйте SSH‑туннель или reverse proxy.
+
 ### Вариант B: Поэтапная установка
 
 ```bash
-# 1. Установка Redis
-sudo bash scripts/05-setup-redis.sh
-
-# 2. Установка Supabase
+# 1. Установка Supabase
 sudo bash scripts/03-setup-supabase.sh
+
+# 2. Установка Redis
+sudo bash scripts/05-setup-redis.sh
 
 # 3. Настройка векторной БД
 sudo bash scripts/06-setup-vector-db.sh
@@ -144,12 +152,14 @@ sudo bash scripts/06-setup-vector-db.sh
 1. **Настройка резервного копирования:**
    ```bash
    # Бэкап PostgreSQL
-   docker exec supabase_db pg_dump -U postgres postgres > backup.sql
+   sudo bash scripts/08-backup-postgres.sh
    ```
+   См. [10-backup-restore.md](docs/10-backup-restore.md)
+   Для расписания: `sudo bash scripts/09-setup-backup-cron.sh`
 
 2. **Настройка мониторинга:**
-   - Установите Prometheus + Grafana
-   - Настройте алерты
+   - Запустите Prometheus + Grafana через compose
+   - См. [09-monitoring.md](docs/09-monitoring.md)
 
 3. **Настройка Nginx reverse proxy:**
    ```bash
@@ -216,6 +226,8 @@ docker logs supabase_db
 # Проверьте подключение
 docker exec supabase_db psql -U postgres -c "SELECT 1;"
 ```
+
+Подробнее см. [11-troubleshooting.md](docs/11-troubleshooting.md)
 
 ## Полезные команды
 

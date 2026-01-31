@@ -18,13 +18,13 @@
 │  ┌─────────────────────────────────────────────────────┐  │
 │  │              Docker Engine                           │  │
 │  │                                                       │  │
-│  │  ┌──────────────┐  ┌──────────────┐                 │  │
-│  │  │   Redis      │  │  Supabase    │                 │  │
-│  │  │  (6379)      │  │  PostgreSQL  │                 │  │
-│  │  │              │  │  (54322)     │                 │  │
-│  │  │  - Кэш       │  │  - pgvector  │                 │  │
-│  │  │  - Очереди   │  │  - Auth      │                 │  │
-│  │  └──────────────┘  └──────────────┘                 │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │  │
+│  │  │   Redis      │  │  PgBouncer   │  │  Supabase    │ │  │
+│  │  │  (6379)      │  │  (6432)      │  │  PostgreSQL  │ │  │
+│  │  │              │  │  - Pooling   │  │  (54322)     │ │  │
+│  │  │  - Кэш       │  │              │  │  - pgvector  │ │  │
+│  │  │  - Очереди   │  │              │  │  - Auth      │ │  │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘ │  │
 │  │                                                       │  │
 │  │  ┌─────────────────────────────────────┐             │  │
 │  │  │         n8n Platform                │             │  │
@@ -53,7 +53,7 @@
 ```
 n8n Workflow
   ├─→ OpenAI Embedding API (создание embedding)
-  ├─→ PostgreSQL + pgvector (поиск похожих документов)
+  ├─→ PgBouncer → PostgreSQL + pgvector (поиск похожих документов)
   ├─→ Формирование контекста
   └─→ OpenAI Chat API (генерация ответа)
 ```
@@ -63,7 +63,7 @@ n8n Workflow
 ```
 n8n Workflow
   ├─→ Агент поиска (Redis очередь)
-  │     └─→ PostgreSQL (векторный поиск)
+  │     └─→ PgBouncer → PostgreSQL (векторный поиск)
   ├─→ Агент анализа (Redis очередь)
   │     └─→ OpenAI API
   └─→ Агент генерации (Redis очередь)
@@ -157,7 +157,7 @@ n8n Workflow
 
 **Интеграции:**
 - OpenAI API (ChatGPT, Embeddings)
-- PostgreSQL (векторный поиск)
+    - PgBouncer → PostgreSQL (векторный поиск)
 - Redis (очереди)
 - Webhooks (внешние API)
 
@@ -174,10 +174,11 @@ Internet
   │
   └─→ Docker Network (infrastructure-network)
         │
-        ├─→ Redis (6379) - внутренний
-        ├─→ PostgreSQL (54322) - внутренний
-        ├─→ n8n Main
-        └─→ n8n Worker
+       ├─→ Redis (6379) - внутренний
+       ├─→ PgBouncer (6432) - внутренний
+       ├─→ PostgreSQL (54322) - внутренний
+       ├─→ n8n Main
+       └─→ n8n Worker
 ```
 
 ## Потоки данных

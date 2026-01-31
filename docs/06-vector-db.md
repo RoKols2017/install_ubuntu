@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
 -- HNSW индекс (быстрый, но занимает больше места)
 CREATE INDEX IF NOT EXISTS documents_embedding_idx ON documents 
 USING hnsw (embedding vector_cosine_ops)
-WITH (m = 16, ef_construction = 64);
+WITH (m = 24, ef_construction = 128);
 
 -- IVFFlat индекс (медленнее, но меньше места)
 -- CREATE INDEX documents_embedding_idx ON documents 
@@ -74,6 +74,23 @@ WITH (m = 16, ef_construction = 64);
 
 -- Индекс для поиска сессий по пользователю
 CREATE INDEX IF NOT EXISTS chat_sessions_user_id_idx ON chat_sessions(user_id);
+```
+
+Примечания по тюнингу HNSW:
+- `m` и `ef_construction` увеличивают точность, но требуют больше памяти.
+- Для изменения параметров индекса нужно пересоздать индекс.
+
+Пример пересоздания индекса:
+```sql
+DROP INDEX IF EXISTS documents_embedding_idx;
+CREATE INDEX documents_embedding_idx ON documents
+USING hnsw (embedding vector_cosine_ops)
+WITH (m = 24, ef_construction = 128);
+```
+
+Пример настройки точности поиска:
+```sql
+SET hnsw.ef_search = 100;
 ```
 
 ## Шаг 5: Создание функций для поиска
@@ -143,6 +160,21 @@ SELECT * FROM match_documents(
   0.7,               -- match_threshold
   10                  -- match_count
 );
+```
+
+## Поддержка и обслуживание
+
+Рекомендуется периодически выполнять:
+```sql
+VACUUM (ANALYZE) documents;
+VACUUM (ANALYZE) chat_sessions;
+```
+
+Проверка работы autovacuum:
+```sql
+SELECT relname, n_dead_tup, last_autovacuum
+FROM pg_stat_user_tables
+ORDER BY n_dead_tup DESC;
 ```
 
 Пример использования в n8n Function узле:

@@ -6,23 +6,28 @@ version: '3.8'
 services:
   # Redis - кэш и очередь задач
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.7-alpine
     container_name: redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-change-me-redis-password} --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+      - "127.0.0.1:6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required} --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis-data:/data
     networks:
       - infrastructure-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 30s
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 10s
       timeout: 3s
       retries: 3
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-change-me-redis-password}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Supabase - PostgreSQL база данных
   supabase_db:
@@ -30,13 +35,13 @@ services:
     container_name: supabase_db
     restart: unless-stopped
     ports:
-      - "54322:5432"
+      - "127.0.0.1:54322:5432"
     environment:
       POSTGRES_HOST: /var/run/postgresql
       POSTGRES_PORT: 5432
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:?SUPABASE_DB_PASSWORD is required}
       PGDATA: /var/lib/postgresql/data
     volumes:
       - supabase-db-data:/var/lib/postgresql/data
@@ -48,6 +53,61 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # PgBouncer - пул соединений PostgreSQL
+  pgbouncer:
+    image: bitnami/pgbouncer:1.25.1-1
+    container_name: pgbouncer
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6432:6432"
+    environment:
+      POSTGRESQL_HOST: supabase_db
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DATABASE: postgres
+      POSTGRESQL_USERNAME: postgres
+      POSTGRESQL_PASSWORD: ${SUPABASE_DB_PASSWORD:?SUPABASE_DB_PASSWORD is required}
+      PGBOUNCER_POOL_MODE: ${PGBOUNCER_POOL_MODE:-transaction}
+      PGBOUNCER_MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-200}
+      PGBOUNCER_DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-20}
+    networks:
+      - infrastructure-network
+    depends_on:
+      supabase_db:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Supabase Meta (для Studio)
+  supabase_meta:
+    image: supabase/postgres-meta:v0.95.2
+    container_name: supabase_meta
+    restart: unless-stopped
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: supabase_db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: ${SUPABASE_DB_PASSWORD:?SUPABASE_DB_PASSWORD is required}
+    networks:
+      - infrastructure-network
+    depends_on:
+      supabase_db:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Supabase Studio (опционально)
   supabase_studio:
@@ -55,20 +115,28 @@ services:
     container_name: supabase_studio
     restart: unless-stopped
     ports:
-      - "54323:3000"
+      - "127.0.0.1:54323:3000"
     environment:
       STUDIO_PG_META_URL: http://supabase_meta:8080
-      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:?SUPABASE_DB_PASSWORD is required}
       DEFAULT_ORGANIZATION_NAME: ${SUPABASE_ORG_NAME:-Default Org}
       DEFAULT_PROJECT_NAME: ${SUPABASE_PROJECT_NAME:-Default Project}
     networks:
       - infrastructure-network
     depends_on:
-      - supabase_db
+      supabase_db:
+        condition: service_healthy
+      supabase_meta:
+        condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # n8n - платформа автоматизации
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.4.8
     container_name: n8n
     restart: unless-stopped
     ports:
@@ -76,16 +144,18 @@ services:
     environment:
       - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-true}
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-change-me-n8n-password}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:?N8N_BASIC_AUTH_PASSWORD is required}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
+      - N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET:?N8N_USER_MANAGEMENT_JWT_SECRET is required}
       - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=supabase_db
-      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_HOST=pgbouncer
+      - DB_POSTGRESDB_PORT=6432
       - DB_POSTGRESDB_DATABASE=postgres
       - DB_POSTGRESDB_USER=postgres
-      - DB_POSTGRESDB_PASSWORD=${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      - DB_POSTGRESDB_PASSWORD=${SUPABASE_DB_PASSWORD:?SUPABASE_DB_PASSWORD is required}
       - QUEUE_BULL_REDIS_HOST=redis
       - QUEUE_BULL_REDIS_PORT=6379
-      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD:-change-me-redis-password}
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
       - N8N_METRICS=${N8N_METRICS:-true}
       - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
@@ -98,28 +168,37 @@ services:
         condition: service_healthy
       supabase_db:
         condition: service_healthy
+      pgbouncer:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5678/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # n8n Worker - обработчик задач
   n8n-worker:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.4.8
     container_name: n8n-worker
     restart: unless-stopped
     command: worker
     environment:
       - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=supabase_db
-      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_HOST=pgbouncer
+      - DB_POSTGRESDB_PORT=6432
       - DB_POSTGRESDB_DATABASE=postgres
       - DB_POSTGRESDB_USER=postgres
-      - DB_POSTGRESDB_PASSWORD=${SUPABASE_DB_PASSWORD:-change-me-supabase-password}
+      - DB_POSTGRESDB_PASSWORD=${SUPABASE_DB_PASSWORD:?SUPABASE_DB_PASSWORD is required}
       - QUEUE_BULL_REDIS_HOST=redis
       - QUEUE_BULL_REDIS_PORT=6379
-      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD:-change-me-redis-password}
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
+      - N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET:?N8N_USER_MANAGEMENT_JWT_SECRET is required}
       - N8N_WORKERS_ENABLED=true
       - N8N_WORKERS_COUNT=${N8N_WORKERS_COUNT:-2}
       - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
@@ -132,6 +211,13 @@ services:
         condition: service_healthy
       n8n:
         condition: service_healthy
+      pgbouncer:
+        condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   redis-data:

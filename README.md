@@ -62,6 +62,11 @@
 
 ### Дополнительные материалы
 - [Системные требования](requirements/system-requirements.md)
+- [Драйверы и совместимость железа](docs/08-hardware-drivers.md)
+- [Мониторинг](docs/09-monitoring.md)
+- [Бэкапы и восстановление](docs/10-backup-restore.md)
+- [Устранение неполадок](docs/11-troubleshooting.md)
+- [Контроль качества](docs/12-quality-checks.md)
 - [Docker Compose конфигурация](docker-compose/docker-compose.yml) - Объединённая конфигурация всех сервисов
 - [Шаблоны конфигураций](templates/) - Nginx, firewall и другие
 
@@ -92,11 +97,11 @@
    # Redis
    sudo bash scripts/05-setup-redis.sh
    
-   # n8n
-   sudo bash scripts/04-setup-n8n.sh
-   
    # pgvector
    sudo bash scripts/06-setup-vector-db.sh
+
+   # n8n
+   sudo bash scripts/04-setup-n8n.sh
    ```
 
 5. **Установите Nginx (опционально, для production):**
@@ -125,6 +130,11 @@ install_ubuntu/
 │   ├── 05-redis.md
 │   ├── 06-vector-db.md
 │   ├── 07-nginx.md
+│   ├── 08-hardware-drivers.md
+│   ├── 09-monitoring.md
+│   ├── 10-backup-restore.md
+│   ├── 11-troubleshooting.md
+│   ├── 12-quality-checks.md
 │   └── architecture.md
 ├── scripts/                           # Скрипты установки
 │   ├── 01-secure-server.sh
@@ -133,7 +143,9 @@ install_ubuntu/
 │   ├── 04-setup-n8n.sh
 │   ├── 05-setup-redis.sh
 │   ├── 06-setup-vector-db.sh
-│   └── 07-setup-nginx.sh
+│   ├── 07-setup-nginx.sh
+│   ├── 08-backup-postgres.sh
+│   └── 09-setup-backup-cron.sh
 ├── docker-compose/                    # Docker Compose конфигурации
 │   ├── docker-compose.yml
 │   ├── supabase/

@@ -24,6 +24,11 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Функция генерации безопасного пароля
+generate_password() {
+    openssl rand -base64 24 | tr -d "=+/" | cut -c1-32
+}
+
 # Проверка Docker
 if ! command -v docker &> /dev/null; then
     log_error "Docker не установлен. Установите Docker сначала."
@@ -63,17 +68,10 @@ if ! grep -q "^N8N_BASIC_AUTH_PASSWORD=" .env 2>/dev/null; then
     log_warn "Переменная N8N_BASIC_AUTH_PASSWORD не найдена в .env"
     log_info "Добавляем переменные для n8n в .env..."
     
-    # Функция генерации безопасного пароля
-    generate_password() {
-        openssl rand -base64 24 | tr -d "=+/" | cut -c1-32
-    }
-    
-    # Читаем существующие пароли
-    SUPABASE_PASSWORD=$(grep "^SUPABASE_DB_PASSWORD=" .env | cut -d'=' -f2 || echo "")
-    REDIS_PASSWORD=$(grep "^REDIS_PASSWORD=" .env | cut -d'=' -f2 || echo "")
-    
     # Генерируем пароль для n8n
     N8N_PASSWORD=$(generate_password)
+    N8N_ENCRYPTION_KEY=$(generate_password)
+    N8N_USER_MANAGEMENT_JWT_SECRET=$(generate_password)
     
     # Добавляем переменные для n8n в .env
     cat >> .env <<EOF
@@ -82,6 +80,8 @@ if ! grep -q "^N8N_BASIC_AUTH_PASSWORD=" .env 2>/dev/null; then
 N8N_BASIC_AUTH_ACTIVE=true
 N8N_BASIC_AUTH_USER=admin
 N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET}
 N8N_WEBHOOK_URL=http://localhost:5678/
 N8N_METRICS=true
 N8N_LOG_LEVEL=info
@@ -89,6 +89,19 @@ N8N_WORKERS_COUNT=2
 EOF
     
     log_info "Переменные для n8n добавлены в .env"
+fi
+
+# Добавляем ключи, если отсутствуют
+if ! grep -q "^N8N_ENCRYPTION_KEY=" .env 2>/dev/null; then
+    N8N_ENCRYPTION_KEY=$(generate_password)
+    echo "N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}" >> .env
+    log_info "Добавлен N8N_ENCRYPTION_KEY в .env"
+fi
+
+if ! grep -q "^N8N_USER_MANAGEMENT_JWT_SECRET=" .env 2>/dev/null; then
+    N8N_USER_MANAGEMENT_JWT_SECRET=$(generate_password)
+    echo "N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET}" >> .env
+    log_info "Добавлен N8N_USER_MANAGEMENT_JWT_SECRET в .env"
 fi
 
 # Проверяем, что Redis и Supabase запущены
@@ -103,6 +116,13 @@ if ! docker ps --format "{{.Names}}" | grep -q "^supabase_db$"; then
     log_warn "Supabase PostgreSQL не запущен. Запускаем Supabase..."
     docker compose up -d supabase_db
     log_info "Ожидание готовности Supabase..."
+    sleep 5
+fi
+
+if ! docker ps --format "{{.Names}}" | grep -q "^pgbouncer$"; then
+    log_warn "PgBouncer не запущен. Запускаем PgBouncer..."
+    docker compose up -d pgbouncer
+    log_info "Ожидание готовности PgBouncer..."
     sleep 5
 fi
 
