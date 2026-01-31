@@ -115,3 +115,4 @@ docker exec redis redis-cli -a YOUR_PASSWORD --rdb /data/dump.rdb
 - [n8n Workers](https://docs.n8n.io/hosting/installation/scaling/)
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [Redis Documentation](https://redis.io/docs/)
+

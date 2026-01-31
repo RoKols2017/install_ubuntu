@@ -189,3 +189,4 @@ docker ps | grep supabase
 
 - [Официальная документация Supabase Self-hosting](https://supabase.com/docs/guides/self-hosting)
 - [Документация pgvector](https://github.com/pgvector/pgvector)
+

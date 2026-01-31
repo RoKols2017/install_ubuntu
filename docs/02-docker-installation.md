@@ -275,3 +275,4 @@ docker logs <container_id>
 - [Официальная документация Docker для Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
 - [Документация Docker Compose](https://docs.docker.com/compose/)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
+

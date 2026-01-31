@@ -145,3 +145,4 @@ networks:
   infrastructure-network:
     driver: bridge
     name: infrastructure-network
+

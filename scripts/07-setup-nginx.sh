@@ -149,3 +149,4 @@ log_warn "   sudo apt install -y certbot python3-certbot-nginx"
 log_warn "   sudo certbot --nginx -d your-domain.com"
 log_warn ""
 log_info "Nginx доступен по адресу: http://$(hostname -I | awk '{print $1}')"
+

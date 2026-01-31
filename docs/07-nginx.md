@@ -337,3 +337,4 @@ sudo ufw allow 443/tcp
 - [Nginx Beginner's Guide](https://nginx.org/en/docs/beginners_guide.html)
 - [Let's Encrypt Documentation](https://letsencrypt.org/docs/)
 - [Certbot Documentation](https://eff-certbot.readthedocs.io/)
+

@@ -311,3 +311,4 @@ sudo bash scripts/01-secure-server.sh
 - [Ubuntu Security Documentation](https://ubuntu.com/security)
 - [DigitalOcean Security Best Practices](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-22-04)
 - [UFW Documentation](https://help.ubuntu.com/community/UFW)
+

@@ -365,3 +365,4 @@ Internet
 - [n8n Architecture](https://docs.n8n.io/hosting/installation/scaling/)
 - [Supabase Architecture](https://supabase.com/docs/guides/self-hosting)
 - [pgvector Performance](https://github.com/pgvector/pgvector#performance)
+
