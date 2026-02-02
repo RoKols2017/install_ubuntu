@@ -67,6 +67,8 @@
 - [Бэкапы и восстановление](docs/10-backup-restore.md)
 - [Устранение неполадок](docs/11-troubleshooting.md)
 - [Контроль качества](docs/12-quality-checks.md)
+- [Управление секретами](docs/13-secrets.md)
+- [Правила готовности](docs/14-ready-rules.md)
 - [Docker Compose конфигурация](docker-compose/docker-compose.yml) - Объединённая конфигурация всех сервисов
 - [Шаблоны конфигураций](templates/) - Nginx, firewall и другие
 
@@ -135,6 +137,8 @@ install_ubuntu/
 │   ├── 10-backup-restore.md
 │   ├── 11-troubleshooting.md
 │   ├── 12-quality-checks.md
+│   ├── 13-secrets.md
+│   ├── 14-ready-rules.md
 │   └── architecture.md
 ├── scripts/                           # Скрипты установки
 │   ├── 01-secure-server.sh
@@ -145,7 +149,9 @@ install_ubuntu/
 │   ├── 06-setup-vector-db.sh
 │   ├── 07-setup-nginx.sh
 │   ├── 08-backup-postgres.sh
-│   └── 09-setup-backup-cron.sh
+│   ├── 09-setup-backup-cron.sh
+│   ├── 00-preflight-check.sh
+│   └── 99-ready-checks.sh
 ├── docker-compose/                    # Docker Compose конфигурации
 │   ├── docker-compose.yml
 │   ├── supabase/

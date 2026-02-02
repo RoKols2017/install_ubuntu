@@ -8,6 +8,11 @@ cd docker-compose
 docker compose config
 ```
 
+## 1.1 Автоматический ready‑чек
+```bash
+sudo bash scripts/99-ready-checks.sh
+```
+
 ## 2. Проверка скриптов (shellcheck)
 ```bash
 sudo apt install -y shellcheck

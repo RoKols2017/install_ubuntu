@@ -33,6 +33,8 @@
 8. **[Бэкапы и восстановление](10-backup-restore.md)** - PostgreSQL
 9. **[Устранение неполадок](11-troubleshooting.md)** - диагностика
 10. **[Контроль качества](12-quality-checks.md)** - проверка установки
+11. **[Управление секретами](13-secrets.md)** - production‑практики
+12. **[Правила готовности](14-ready-rules.md)** - gate‑процедуры
 
 ## Рекомендуемый порядок установки
 
@@ -71,11 +73,17 @@ cp env.example .env
 docker compose --env-file .env up -d
 ```
 
+Для публичного доступа (опционально):
+```bash
+docker compose -f docker-compose.yml -f docker-compose.override.public.yml up -d
+```
+
 Примечания:
 - Порты БД и Redis привязаны к `127.0.0.1` для безопасности.
 - Для внешнего доступа используйте SSH‑туннель или reverse proxy.
 - Supabase Studio требует сервис `supabase_meta` (он включён в compose).
 - n8n подключается к БД через PgBouncer (`localhost:6432` для хоста).
+- n8n по умолчанию доступен только на `127.0.0.1`, для внешнего доступа используйте override.
 - Для production используйте защищённый `.env` или Docker secrets.
 - Рекомендуется регулярная ротация паролей (минимум раз в 90 дней).
 

@@ -169,8 +169,8 @@ Internet
   ├─→ UFW Firewall
   │     │
   │     ├─→ SSH (22) - управление
-  │     ├─→ n8n (5678) - веб-интерфейс
-  │     └─→ Supabase Studio (54323) - опционально
+  │     ├─→ Nginx (80/443) - reverse proxy
+  │     └─→ (опционально) прямой доступ к n8n/Studio через override
   │
   └─→ Docker Network (infrastructure-network)
         │

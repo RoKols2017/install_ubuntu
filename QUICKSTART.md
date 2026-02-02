@@ -20,6 +20,12 @@ cd install_ubuntu
 # Или скопируйте файлы на сервер
 ```
 
+## Шаг 1.1: Preflight проверка
+
+```bash
+sudo bash scripts/00-preflight-check.sh
+```
+
 ## Шаг 2: Безопасная настройка сервера
 
 ```bash
@@ -116,6 +122,11 @@ docker exec supabase_db psql -U postgres -c "SELECT version();"
 curl http://localhost:5678/healthz
 ```
 
+### Ready‑проверка
+```bash
+sudo bash scripts/99-ready-checks.sh
+```
+
 ### Доступ к веб-интерфейсам
 
 - **n8n:** http://localhost:5678
@@ -123,6 +134,14 @@ curl http://localhost:5678/healthz
   - Пароль: из файла `.env` (N8N_BASIC_AUTH_PASSWORD)
 
 - **Supabase Studio:** http://localhost:54323 (если включён)
+
+Примечание:
+- По умолчанию n8n и Studio доступны только на `127.0.0.1`.
+- Для внешнего доступа используйте:
+  ```bash
+  cd docker-compose
+  docker compose -f docker-compose.yml -f docker-compose.override.public.yml up -d
+  ```
 
 ## Шаг 7: Настройка векторной БД
 
