@@ -26,11 +26,17 @@ cd install_ubuntu
 sudo bash scripts/00-preflight-check.sh
 ```
 
+## Шаг 1.2: Настройка SSH ключей (клиентская машина)
+
+```bash
+bash scripts/01-setup-ssh-keys.sh
+```
+
 ## Шаг 2: Безопасная настройка сервера
 
 ```bash
 # Выполните скрипт настройки безопасности
-sudo bash scripts/01-secure-server.sh
+sudo bash scripts/02-secure-server.sh
 
 # ВАЖНО: Убедитесь, что у вас настроен доступ по SSH ключам
 # перед выполнением этого скрипта!
@@ -40,7 +46,7 @@ sudo bash scripts/01-secure-server.sh
 
 ```bash
 # Установите Docker и Docker Compose
-sudo bash scripts/02-install-docker.sh
+sudo bash scripts/03-install-docker.sh
 
 # Перелогиньтесь или выполните для применения изменений группы docker
 newgrp docker
@@ -92,16 +98,16 @@ docker compose logs -f
 
 ```bash
 # 1. Установка Supabase
-sudo bash scripts/03-setup-supabase.sh
+sudo bash scripts/04-setup-supabase.sh
 
 # 2. Установка Redis
-sudo bash scripts/05-setup-redis.sh
+sudo bash scripts/06-setup-redis.sh
 
 # 3. Настройка векторной БД
-sudo bash scripts/06-setup-vector-db.sh
+sudo bash scripts/07-setup-vector-db.sh
 
 # 4. Установка n8n
-sudo bash scripts/04-setup-n8n.sh
+sudo bash scripts/05-setup-n8n.sh
 ```
 
 ## Шаг 6: Проверка работы
@@ -147,7 +153,7 @@ sudo bash scripts/99-ready-checks.sh
 
 ```bash
 # Выполните скрипт настройки pgvector
-sudo bash scripts/06-setup-vector-db.sh
+sudo bash scripts/07-setup-vector-db.sh
 
 # Скрипт запросит параметры подключения к БД
 # Используйте данные из Supabase:
@@ -171,10 +177,10 @@ sudo bash scripts/06-setup-vector-db.sh
 1. **Настройка резервного копирования:**
    ```bash
    # Бэкап PostgreSQL
-   sudo bash scripts/08-backup-postgres.sh
+   sudo bash scripts/10-backup-postgres.sh
    ```
    См. [10-backup-restore.md](docs/10-backup-restore.md)
-   Для расписания: `sudo bash scripts/09-setup-backup-cron.sh`
+   Для расписания: `sudo bash scripts/11-setup-backup-cron.sh`
 
 2. **Настройка мониторинга:**
    - Запустите Prometheus + Grafana через compose
@@ -183,7 +189,7 @@ sudo bash scripts/06-setup-vector-db.sh
 3. **Настройка Nginx reverse proxy:**
    ```bash
    # Установите Nginx
-   sudo bash scripts/07-setup-nginx.sh
+   sudo bash scripts/08-setup-nginx.sh
    
    # Создайте конфигурацию (используйте шаблон из templates/nginx.conf.example)
    sudo nano /etc/nginx/sites-available/n8n

@@ -245,7 +245,7 @@ sudo rm -rf /etc/docker
 Для автоматической установки используйте скрипт:
 
 ```bash
-sudo bash scripts/02-install-docker.sh
+sudo bash scripts/03-install-docker.sh
 ```
 
 ## Полезные команды Docker

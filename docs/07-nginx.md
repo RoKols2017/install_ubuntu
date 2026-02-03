@@ -13,7 +13,7 @@ Nginx используется как reverse proxy для сервисов ин
 
 ```bash
 # Используя скрипт (рекомендуется)
-sudo bash scripts/07-setup-nginx.sh
+sudo bash scripts/08-setup-nginx.sh
 
 # Или вручную
 sudo apt update

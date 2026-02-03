@@ -6,7 +6,8 @@
 
 ### Этап 1: Безопасная настройка сервера
 - [Документация](docs/01-server-security.md) - Полное руководство по безопасности Ubuntu
-- [Скрипт установки](scripts/01-secure-server.sh) - Автоматизация настройки безопасности
+- [Скрипт настройки SSH ключей](scripts/01-setup-ssh-keys.sh) - Подготовка доступа (клиентская машина)
+- [Скрипт установки](scripts/02-secure-server.sh) - Автоматизация настройки безопасности
 
 **Что включает:**
 - Обновление системы
@@ -18,7 +19,7 @@
 
 ### Этап 2: Установка Docker
 - [Документация](docs/02-docker-installation.md) - Руководство по установке Docker и Docker Compose
-- [Скрипт установки](scripts/02-install-docker.sh) - Автоматическая установка Docker
+- [Скрипт установки](scripts/03-install-docker.sh) - Автоматическая установка Docker
 
 **Что включает:**
 - Установка Docker Engine
@@ -33,25 +34,25 @@
 
 #### 3.1 Supabase (Self-hosted)
 - [Документация](docs/03-supabase.md) - Полное руководство по установке Supabase
-- [Скрипт установки](scripts/03-setup-supabase.sh)
+- [Скрипт установки](scripts/04-setup-supabase.sh)
 - [Конфигурация](docker-compose/supabase/config.toml)
 
 #### 3.2 n8n с воркером
 - [Документация](docs/04-n8n.md) - Полное руководство по установке n8n
-- [Скрипт установки](scripts/04-setup-n8n.sh)
+- [Скрипт установки](scripts/05-setup-n8n.sh)
 - [Конфигурация](docker-compose/n8n/env.example)
 
 #### 3.3 Redis
 - [Документация](docs/05-redis.md) - Полное руководство по установке Redis
-- [Скрипт установки](scripts/05-setup-redis.sh)
+- [Скрипт установки](scripts/06-setup-redis.sh)
 
 #### 3.4 Векторная БД (pgvector)
 - [Документация](docs/06-vector-db.md) - Полное руководство по настройке pgvector
-- [Скрипт установки](scripts/06-setup-vector-db.sh)
+- [Скрипт установки](scripts/07-setup-vector-db.sh)
 
 ### Этап 4: Nginx Reverse Proxy (опционально)
 - [Документация](docs/07-nginx.md) - Установка и настройка Nginx с SSL
-- [Скрипт установки](scripts/07-setup-nginx.sh) - Автоматическая установка Nginx
+- [Скрипт установки](scripts/08-setup-nginx.sh) - Автоматическая установка Nginx
 
 **Что включает:**
 - Установка Nginx
@@ -83,32 +84,32 @@
 
 2. **Выполните настройку безопасности (Этап 1):**
    ```bash
-   sudo bash scripts/01-secure-server.sh
+   sudo bash scripts/02-secure-server.sh
    ```
 
 3. **Установите Docker (Этап 2):**
    ```bash
-   sudo bash scripts/02-install-docker.sh
+   sudo bash scripts/03-install-docker.sh
    ```
 
 4. **Разверните инфраструктуру (Этап 3):**
    ```bash
    # Supabase
-   sudo bash scripts/03-setup-supabase.sh
+   sudo bash scripts/04-setup-supabase.sh
    
    # Redis
-   sudo bash scripts/05-setup-redis.sh
+   sudo bash scripts/06-setup-redis.sh
    
    # pgvector
-   sudo bash scripts/06-setup-vector-db.sh
+   sudo bash scripts/07-setup-vector-db.sh
 
    # n8n
-   sudo bash scripts/04-setup-n8n.sh
+   sudo bash scripts/05-setup-n8n.sh
    ```
 
 5. **Установите Nginx (опционально, для production):**
    ```bash
-   sudo bash scripts/07-setup-nginx.sh
+   sudo bash scripts/08-setup-nginx.sh
    ```
 
 6. **Или используйте единый Docker Compose:**
@@ -141,16 +142,18 @@ install_ubuntu/
 │   ├── 14-ready-rules.md
 │   └── architecture.md
 ├── scripts/                           # Скрипты установки
-│   ├── 01-secure-server.sh
-│   ├── 02-install-docker.sh
-│   ├── 03-setup-supabase.sh
-│   ├── 04-setup-n8n.sh
-│   ├── 05-setup-redis.sh
-│   ├── 06-setup-vector-db.sh
-│   ├── 07-setup-nginx.sh
-│   ├── 08-backup-postgres.sh
-│   ├── 09-setup-backup-cron.sh
 │   ├── 00-preflight-check.sh
+│   ├── 01-setup-ssh-keys.sh
+│   ├── 02-secure-server.sh
+│   ├── 03-install-docker.sh
+│   ├── 04-setup-supabase.sh
+│   ├── 05-setup-n8n.sh
+│   ├── 06-setup-redis.sh
+│   ├── 07-setup-vector-db.sh
+│   ├── 08-setup-nginx.sh
+│   ├── 09-install-nvidia-drivers.sh
+│   ├── 10-backup-postgres.sh
+│   ├── 11-setup-backup-cron.sh
 │   └── 99-ready-checks.sh
 ├── docker-compose/                    # Docker Compose конфигурации
 │   ├── docker-compose.yml

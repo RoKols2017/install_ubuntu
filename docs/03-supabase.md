@@ -65,7 +65,7 @@ password = "your-super-secret-password"
 supabase start
 
 # Или используя наш скрипт
-sudo bash scripts/03-setup-supabase.sh
+sudo bash scripts/04-setup-supabase.sh
 ```
 
 ## Шаг 5: Получение API ключей

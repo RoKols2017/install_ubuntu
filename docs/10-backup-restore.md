@@ -14,14 +14,14 @@ sudo apt install -y postgresql-client
 
 ## 2. Бэкап PostgreSQL (скрипт)
 ```bash
-sudo bash scripts/08-backup-postgres.sh
+sudo bash scripts/10-backup-postgres.sh
 ```
 
 По умолчанию бэкапы сохраняются в `/opt/backups`.
 
 ## 3. Автоматизация по расписанию (cron)
 ```bash
-sudo bash scripts/09-setup-backup-cron.sh
+sudo bash scripts/11-setup-backup-cron.sh
 ```
 
 Пример расписания:

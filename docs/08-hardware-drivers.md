@@ -44,6 +44,11 @@ sudo ubuntu-drivers install
 nvidia-smi
 ```
 
+Или используйте скрипт:
+```bash
+sudo bash scripts/09-install-nvidia-drivers.sh
+```
+
 ### 2.2 AMD/Intel
 ```bash
 sudo apt install -y linux-firmware

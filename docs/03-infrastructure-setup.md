@@ -40,25 +40,25 @@
 
 1. **Supabase** - базовая инфраструктура БД
    ```bash
-   sudo bash scripts/03-setup-supabase.sh
+   sudo bash scripts/04-setup-supabase.sh
    ```
    См. [03-supabase.md](03-supabase.md) для подробностей
 
 2. **Redis** - очередь задач (можно установить параллельно с Supabase)
    ```bash
-   sudo bash scripts/05-setup-redis.sh
+   sudo bash scripts/06-setup-redis.sh
    ```
    См. [05-redis.md](05-redis.md) для подробностей
 
 3. **Векторная БД** - настройка pgvector в Supabase
    ```bash
-   sudo bash scripts/06-setup-vector-db.sh
+   sudo bash scripts/07-setup-vector-db.sh
    ```
    См. [06-vector-db.md](06-vector-db.md) для подробностей
 
 4. **n8n** - требует Supabase и Redis
    ```bash
-   sudo bash scripts/04-setup-n8n.sh
+   sudo bash scripts/05-setup-n8n.sh
    ```
    См. [04-n8n.md](04-n8n.md) для подробностей
 

@@ -303,7 +303,7 @@ sudo sshd -T | grep -E "PermitRootLogin|PasswordAuthentication|Port"
 Для автоматизации всех этих шагов используйте скрипт:
 
 ```bash
-sudo bash scripts/01-secure-server.sh
+sudo bash scripts/02-secure-server.sh
 ```
 
 ## Источники
