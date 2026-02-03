@@ -16,7 +16,8 @@
 10. `scripts/09-install-nvidia-drivers.sh` — NVIDIA (опционально)
 11. `scripts/10-backup-postgres.sh` — бэкап БД
 12. `scripts/11-setup-backup-cron.sh` — cron бэкапов
-13. `scripts/99-ready-checks.sh` — ready‑проверки
+13. `scripts/12-generate-secrets.sh` — генерация секретов (.env + config.toml)
+14. `scripts/99-ready-checks.sh` — ready‑проверки
 
 ## 2. Важно
 - Нумерация **историческая**, но **порядок запуска** указан выше.
@@ -32,5 +33,6 @@ sudo bash scripts/04-setup-supabase.sh
 sudo bash scripts/06-setup-redis.sh
 sudo bash scripts/07-setup-vector-db.sh
 sudo bash scripts/05-setup-n8n.sh
+sudo bash scripts/12-generate-secrets.sh
 sudo bash scripts/99-ready-checks.sh
 ```

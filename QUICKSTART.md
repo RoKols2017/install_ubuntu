@@ -73,6 +73,11 @@ nano .env
 - `N8N_USER_MANAGEMENT_JWT_SECRET` - JWT секрет n8n
 - `GRAFANA_PASSWORD` - пароль Grafana
 
+Альтернатива (автогенерация секретов):
+```bash
+sudo bash scripts/12-generate-secrets.sh
+```
+
 ## Шаг 5: Запуск инфраструктуры
 
 ### Вариант A: Использование единого docker-compose.yml

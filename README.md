@@ -156,6 +156,7 @@ install_ubuntu/
 │   ├── 09-install-nvidia-drivers.sh
 │   ├── 10-backup-postgres.sh
 │   ├── 11-setup-backup-cron.sh
+│   ├── 12-generate-secrets.sh
 │   └── 99-ready-checks.sh
 ├── docker-compose/                    # Docker Compose конфигурации
 │   ├── docker-compose.yml

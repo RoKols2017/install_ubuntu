@@ -23,6 +23,11 @@ chmod 600 .env
 openssl rand -base64 24 | tr -d "=+/" | cut -c1-32
 ```
 
+Или используйте скрипт:
+```bash
+sudo bash scripts/12-generate-secrets.sh
+```
+
 ## 3. Ротация секретов
 1. Сгенерируйте новые значения.
 2. Обновите `.env`.
