@@ -70,6 +70,7 @@
 - [Контроль качества](docs/12-quality-checks.md)
 - [Управление секретами](docs/13-secrets.md)
 - [Правила готовности](docs/14-ready-rules.md)
+- [Последовательность скриптов](docs/15-scripts-order.md)
 - [Docker Compose конфигурация](docker-compose/docker-compose.yml) - Объединённая конфигурация всех сервисов
 - [Шаблоны конфигураций](templates/) - Nginx, firewall и другие
 
@@ -140,6 +141,7 @@ install_ubuntu/
 │   ├── 12-quality-checks.md
 │   ├── 13-secrets.md
 │   ├── 14-ready-rules.md
+│   ├── 15-scripts-order.md
 │   └── architecture.md
 ├── scripts/                           # Скрипты установки
 │   ├── 00-preflight-check.sh
