@@ -2,6 +2,43 @@
 
 Универсальные руководства и скрипты для безопасной настройки Ubuntu сервера, установки Docker и развертывания инфраструктуры для мультиагентных ассистентов на базе n8n с Supabase, Redis и pgvector.
 
+## Какую задачу решает
+
+Когда нужно быстро подготовить VPS или bare-metal сервер под AI-сервисы, команда обычно тратит время на разрозненные чеклисты: безопасность, Docker, база данных, очередь задач, векторный поиск и reverse proxy настраиваются отдельно и часто вручную.
+
+Этот проект нужен, чтобы:
+
+- последовательно поднять Ubuntu-сервер с базовой безопасностью;
+- установить Docker и контейнерный runtime;
+- развернуть self-hosted стек для AI automation и multi-agent workflow;
+- получить единый набор документов, скриптов и compose-конфигураций вместо ручной сборки по частям.
+
+## Что получает команда на выходе
+
+- сервер с UFW, SSH hardening, fail2ban и автообновлениями безопасности;
+- Docker-based инфраструктуру с Supabase, Redis, pgvector и n8n;
+- понятный порядок установки по этапам и отдельным компонентам;
+- основу для RAG, очередей задач, automation workflow и self-hosted AI сервисов.
+
+## Proof: infrastructure flow
+
+```text
+Ubuntu server
+  -> security hardening
+  -> Docker install
+  -> Supabase + pgvector
+  -> Redis
+  -> n8n main + worker
+  -> optional Nginx reverse proxy
+```
+
+## Proof: what is actually included
+
+- В репозитории есть отдельные этапы для security, Docker, Supabase, n8n, Redis, pgvector и Nginx.
+- Для быстрой установки предусмотрены shell scripts `02-secure-server.sh` ... `08-setup-nginx.sh`.
+- Архитектура явно описывает runtime-компоненты: `Redis`, `PgBouncer`, `PostgreSQL/Supabase`, `n8n Main`, `n8n Worker` и `Nginx`.
+- Документация фиксирует как пошаговую установку компонентов, так и объединенную установку через Docker Compose.
+
 ## 📋 Содержание
 
 ### Этап 1: Безопасная настройка сервера
@@ -187,4 +224,3 @@ install_ubuntu/
 ## 📝 Лицензия
 
 Этот проект предоставляется "как есть" для использования в образовательных и коммерческих целях.
-
