@@ -1,3 +1,5 @@
+[← Secrets](13-secrets.md) · [Back to README](../README.md) · [Scripts Order →](15-scripts-order.md)
+
 # Правила готовности (Ready)
 
 Эти правила защищают от ошибок при развёртывании и эксплуатации.
@@ -32,3 +34,9 @@ sudo bash scripts/99-ready-checks.sh
 
 ## Источники
 - https://docs.docker.com/compose/reference/config/
+
+## See Also
+
+- [Quality Checks](12-quality-checks.md) — команды для ручной проверки.
+- [Secrets](13-secrets.md) — обязательные секреты перед запуском.
+- [Scripts Order](15-scripts-order.md) — когда запускать ready gate.

@@ -1,3 +1,5 @@
+[← Monitoring](09-monitoring.md) · [Back to README](../README.md) · [Troubleshooting →](11-troubleshooting.md)
+
 # Резервное копирование и восстановление
 
 Это руководство описывает базовый процесс бэкапа PostgreSQL (Supabase) и восстановления.
@@ -49,3 +51,9 @@ gunzip -c /opt/backups/postgres_YYYYMMDD_HHMMSS.sql.gz | psql -h localhost -p 54
 
 ## Источники
 - https://www.postgresql.org/docs/current/backup.html
+
+## See Also
+
+- [Supabase](03-supabase.md) — PostgreSQL service, который нужно бэкапить.
+- [Secrets](13-secrets.md) — защита `.env` и backup credentials.
+- [Quality Checks](12-quality-checks.md) — проверки после восстановления.

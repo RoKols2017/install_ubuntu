@@ -1,3 +1,5 @@
+[← Security Hardening Details](01-server-security-hardening.md) · [Back to README](../README.md) · [Infrastructure Setup →](03-infrastructure-setup.md)
+
 # Установка Docker и Docker Compose
 
 Это руководство описывает установку Docker Engine и Docker Compose на Ubuntu сервере.
@@ -276,3 +278,8 @@ docker logs <container_id>
 - [Документация Docker Compose](https://docs.docker.com/compose/)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 
+## See Also
+
+- [Infrastructure Setup](03-infrastructure-setup.md) — запуск сервисов после установки Docker.
+- [Scripts Order](15-scripts-order.md) — порядок запуска install-скриптов.
+- [Quality Checks](12-quality-checks.md) — проверка `docker compose config` и healthchecks.

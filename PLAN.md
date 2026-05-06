@@ -1,3 +1,18 @@
+# Project Plan
+
+> Roadmap-style status document for improving `install_ubuntu` toward production-ready Ubuntu/VPS infrastructure for AI automation.
+
+This file stays in the repository root as a project roadmap and quality-gate tracker. User-facing setup instructions live in [README.md](README.md), [QUICKSTART.md](QUICKSTART.md), and [docs/](docs/).
+
+## Scope
+
+- Track completed infrastructure improvements.
+- Keep remaining risks visible.
+- Record quality gates that still require manual validation.
+- Avoid duplicating step-by-step installation docs.
+
+---
+
 # План приведения проекта к лучшим практикам
 
 > **Последняя проверка:** 2026-02-03

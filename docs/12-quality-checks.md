@@ -1,3 +1,5 @@
+[← Troubleshooting](11-troubleshooting.md) · [Back to README](../README.md) · [Secrets →](13-secrets.md)
+
 # Контроль качества и проверка установки
 
 Этот чек‑лист помогает проверить корректность конфигурации и работоспособность инфраструктуры.
@@ -55,3 +57,9 @@ curl -f http://localhost:3000/api/health
 ## Источники
 - https://github.com/koalaman/shellcheck
 - https://docs.docker.com/compose/reference/config/
+
+## See Also
+
+- [Ready Rules](14-ready-rules.md) — gate-критерии перед production.
+- [Troubleshooting](11-troubleshooting.md) — что смотреть при падении проверок.
+- [Scripts Order](15-scripts-order.md) — где запускать ready checks в install flow.

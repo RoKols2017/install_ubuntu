@@ -1,159 +1,153 @@
-﻿# РЈСЃС‚Р°РЅРѕРІРєР° Redis
+[← n8n](04-n8n.md) · [Back to README](../README.md) · [pgvector →](06-vector-db.md)
 
-Redis РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РєР°Рє РєСЌС€ Рё РѕС‡РµСЂРµРґСЊ Р·Р°РґР°С‡ РґР»СЏ n8n.
+# Установка Redis
 
-## РџСЂРµРґРІР°СЂРёС‚РµР»СЊРЅС‹Рµ С‚СЂРµР±РѕРІР°РЅРёСЏ
+Redis используется как кэш и очередь задач для n8n worker mode. В основном compose-файле сервис закрыт на `127.0.0.1`, защищён паролем из `.env` и настроен с AOF persistence.
 
-- Docker СѓСЃС‚Р°РЅРѕРІР»РµРЅ ([Р­С‚Р°Рї 2](02-docker-installation.md))
-- РџРѕСЂС‚: 6379
+## Предварительные требования
 
-## РЁР°Рі 1: РЈСЃС‚Р°РЅРѕРІРєР° Redis
+- Docker и Docker Compose установлены: [Docker Installation](02-docker-installation.md).
+- Файл `docker-compose/.env` создан из `env.example` или через `scripts/12-generate-secrets.sh`.
+- Переменная `REDIS_PASSWORD` задана и не содержит placeholder-значение.
+
+## Шаг 1: Установка Redis
+
+Рекомендуемый путь через скрипт:
 
 ```bash
-# РСЃРїРѕР»СЊР·СѓСЏ СЃРєСЂРёРїС‚ (СЂРµРєРѕРјРµРЅРґСѓРµС‚СЃСЏ)
 sudo bash scripts/06-setup-redis.sh
+```
 
-# РР»Рё РІСЂСѓС‡РЅСѓСЋ С‡РµСЂРµР· РѕСЃРЅРѕРІРЅРѕР№ docker-compose.yml
+Альтернатива через общий compose-стек:
+
+```bash
 cd docker-compose
-docker compose up -d redis
+docker compose --env-file .env up -d redis
 ```
 
-## РЁР°Рі 2: РќР°СЃС‚СЂРѕР№РєР° РїР°СЂРѕР»СЏ Redis
+## Шаг 2: Настройка пароля
 
-РЎРєСЂРёРїС‚ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РіРµРЅРµСЂРёСЂСѓРµС‚ РїР°СЂРѕР»СЊ Рё СЃРѕС…СЂР°РЅСЏРµС‚ РµРіРѕ РІ РѕСЃРЅРѕРІРЅРѕР№ `.env` С„Р°Р№Р» (`docker-compose/.env`).
-
-Р•СЃР»Рё СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚Рµ РІСЂСѓС‡РЅСѓСЋ, СѓР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ РІ С„Р°Р№Р»Рµ `docker-compose/.env` РµСЃС‚СЊ РїРµСЂРµРјРµРЅРЅР°СЏ:
+Сгенерируйте секреты автоматически:
 
 ```bash
-REDIS_PASSWORD=your-secure-redis-password
+sudo bash scripts/12-generate-secrets.sh
 ```
 
-**Р’Р°Р¶РЅРѕ:** РЎРѕС…СЂР°РЅРёС‚Рµ СЌС‚РѕС‚ РїР°СЂРѕР»СЊ! РћРЅ РїРѕРЅР°РґРѕР±РёС‚СЃСЏ РґР»СЏ РЅР°СЃС‚СЂРѕР№РєРё n8n.
-
-## РЁР°Рі 3: РџСЂРѕРІРµСЂРєР° СЂР°Р±РѕС‚С‹
+Или проверьте переменную вручную в `docker-compose/.env`:
 
 ```bash
-# РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє Redis
-docker exec -it redis redis-cli -a your-redis-password
-
-# Р’ Redis CLI:
-PING  # Р”РѕР»Р¶РЅРѕ РІРµСЂРЅСѓС‚СЊ PONG
-INFO  # РРЅС„РѕСЂРјР°С†РёСЏ Рѕ СЃРµСЂРІРµСЂРµ
-EXIT  # Р’С‹С…РѕРґ
+REDIS_PASSWORD=your-secure-redis-password-here
 ```
 
-РР»Рё С‡РµСЂРµР· СЃРєСЂРёРїС‚:
+Не используйте значение из примера в production. Пароль нужен для Redis healthcheck, n8n queue mode и ручной диагностики.
+
+## Шаг 3: Проверка работы
 
 ```bash
-docker exec redis redis-cli -a YOUR_PASSWORD ping
+cd docker-compose
+docker compose ps redis
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" ping
 ```
 
-## РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ
+Ожидаемый ответ:
 
-### РќР°СЃС‚СЂРѕР№РєР° РїРµСЂСЃРёСЃС‚РµРЅС‚РЅРѕСЃС‚Рё
+```text
+PONG
+```
 
-Redis РЅР°СЃС‚СЂРѕРµРЅ РЅР° AOF (Append Only File) РґР»СЏ РїРµСЂСЃРёСЃС‚РµРЅС‚РЅРѕСЃС‚Рё РґР°РЅРЅС‹С…. Р­С‚Рѕ РѕР·РЅР°С‡Р°РµС‚, С‡С‚Рѕ РІСЃРµ РѕРїРµСЂР°С†РёРё Р·Р°РїРёСЃС‹РІР°СЋС‚СЃСЏ РІ С„Р°Р№Р» Рё РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°СЋС‚СЃСЏ РїСЂРё РїРµСЂРµР·Р°РїСѓСЃРєРµ.
+Если переменные окружения не загружены в shell, можно взять пароль из `docker-compose/.env` и передать его явно.
 
-### РќР°СЃС‚СЂРѕР№РєР° РїР°РјСЏС‚Рё
+## Конфигурация
 
-РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р»РёРјРёС‚ 512 MB. Р”Р»СЏ РёР·РјРµРЅРµРЅРёСЏ РѕС‚СЂРµРґР°РєС‚РёСЂСѓР№С‚Рµ РѕСЃРЅРѕРІРЅРѕР№ `docker-compose/docker-compose.yml`:
+Актуальная Redis-команда находится в `docker-compose/docker-compose.yml`:
 
 ```yaml
-command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required} --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
 ```
 
-### РџРѕР»РёС‚РёРєРё eviction
+Что это означает:
 
-- `allkeys-lru` - СѓРґР°Р»СЏРµС‚ РЅР°РёРјРµРЅРµРµ РёСЃРїРѕР»СЊР·СѓРµРјС‹Рµ РєР»СЋС‡Рё РїСЂРё РґРѕСЃС‚РёР¶РµРЅРёРё Р»РёРјРёС‚Р° РїР°РјСЏС‚Рё
-- Р”СЂСѓРіРёРµ РІР°СЂРёР°РЅС‚С‹: `volatile-lru`, `allkeys-random`, `noeviction`
+| Параметр | Назначение |
+|----------|------------|
+| `--requirepass` | Требует пароль из `.env` |
+| `--appendonly yes` | Включает AOF persistence |
+| `--maxmemory 512mb` | Ограничивает память Redis |
+| `--maxmemory-policy allkeys-lru` | Удаляет наименее используемые ключи при лимите памяти |
 
-## РСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ СЃ n8n
+## Использование с n8n
 
-Redis РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ n8n РґР»СЏ:
-- РћС‡РµСЂРµРґРµР№ Р·Р°РґР°С‡ (Bull queues)
-- РљСЌС€РёСЂРѕРІР°РЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ
-- Pub/Sub РґР»СЏ real-time РєРѕРјРјСѓРЅРёРєР°С†РёРё
+n8n подключается к Redis внутри Docker-сети по имени сервиса `redis`:
 
-РќР°СЃС‚СЂРѕР№С‚Рµ РІ n8n С‡РµСЂРµР· РїРµСЂРµРјРµРЅРЅС‹Рµ РѕРєСЂСѓР¶РµРЅРёСЏ:
-- `QUEUE_BULL_REDIS_HOST=redis`
-- `QUEUE_BULL_REDIS_PORT=6379`
-- `QUEUE_BULL_REDIS_PASSWORD=your-redis-password`
+```env
+QUEUE_BULL_REDIS_HOST=redis
+QUEUE_BULL_REDIS_PORT=6379
+QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
+```
 
-## РњРѕРЅРёС‚РѕСЂРёРЅРі
+Эти значения уже заданы в `docker-compose/docker-compose.yml` для сервисов `n8n` и `n8n-worker`.
+
+## Мониторинг
+
+Базовые команды диагностики:
 
 ```bash
-# РРЅС„РѕСЂРјР°С†РёСЏ Рѕ СЃРµСЂРІРµСЂРµ
-docker exec redis redis-cli -a YOUR_PASSWORD INFO server
-
-# РЎС‚Р°С‚РёСЃС‚РёРєР° РїР°РјСЏС‚Рё
-docker exec redis redis-cli -a YOUR_PASSWORD INFO memory
-
-# РљРѕР»РёС‡РµСЃС‚РІРѕ РєР»СЋС‡РµР№
-docker exec redis redis-cli -a YOUR_PASSWORD DBSIZE
-
-# РЎРїРёСЃРѕРє РІСЃРµС… РєР»СЋС‡РµР№ (РѕСЃС‚РѕСЂРѕР¶РЅРѕ РЅР° production!)
-docker exec redis redis-cli -a YOUR_PASSWORD KEYS "*"
+cd docker-compose
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" INFO server
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" INFO memory
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" DBSIZE
 ```
 
-## Р РµР·РµСЂРІРЅРѕРµ РєРѕРїРёСЂРѕРІР°РЅРёРµ
+Не используйте `KEYS "*"` на production с большим количеством ключей: команда может заблокировать Redis на время выполнения.
+
+## Резервное копирование
+
+Для ручного RDB-снимка:
 
 ```bash
-# РЎРѕР·РґР°РЅРёРµ RDB СЃРЅРёРјРєР°
-docker exec redis redis-cli -a YOUR_PASSWORD --rdb /data/dump.rdb
-
-# РљРѕРїРёСЂРѕРІР°РЅРёРµ С„Р°Р№Р»Р° AOF
-docker cp redis:/data/appendonly.aof ./backup/
+cd docker-compose
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" --rdb /data/dump.rdb
 ```
 
-## РЈСЃС‚СЂР°РЅРµРЅРёРµ РЅРµРїРѕР»Р°РґРѕРє
+Для инфраструктурного backup-процесса используйте [Backups](10-backup-restore.md).
 
-### РџСЂРѕР±Р»РµРјР°: Redis РЅРµ Р·Р°РїСѓСЃРєР°РµС‚СЃСЏ
+## Устранение неполадок
+
+### Redis не запускается
 
 ```bash
-# РџСЂРѕРІРµСЂСЊС‚Рµ Р»РѕРіРё
-docker logs redis
-
-# РџСЂРѕРІРµСЂСЊС‚Рµ РїРѕСЂС‚
-sudo netstat -tlnp | grep 6379
+cd docker-compose
+docker compose logs --tail 100 redis
+docker compose config
 ```
 
-### РџСЂРѕР±Р»РµРјР°: РћС€РёР±РєР° Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё
+Проверьте, что `REDIS_PASSWORD` задан в `.env` и порт `6379` не занят другим процессом.
+
+### Ошибка аутентификации
 
 ```bash
-# РџСЂРѕРІРµСЂСЊС‚Рµ РїР°СЂРѕР»СЊ РІ .env С„Р°Р№Р»Рµ
-# РЈР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ РёСЃРїРѕР»СЊР·СѓРµС‚Рµ РїСЂР°РІРёР»СЊРЅС‹Р№ РїР°СЂРѕР»СЊ РїСЂРё РїРѕРґРєР»СЋС‡РµРЅРёРё
+cd docker-compose
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" ping
 ```
 
-### РџСЂРѕР±Р»РµРјР°: РќРµС…РІР°С‚РєР° РїР°РјСЏС‚Рё
+Если команда не возвращает `PONG`, сравните пароль в `docker-compose/.env` с переменной, которую использует текущий shell.
+
+### Нехватка памяти
 
 ```bash
-# РџСЂРѕРІРµСЂСЊС‚Рµ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ РїР°РјСЏС‚Рё
-docker exec redis redis-cli -a YOUR_PASSWORD INFO memory
-
-# РЈРІРµР»РёС‡СЊС‚Рµ Р»РёРјРёС‚ РІ docker-compose.yml РёР»Рё РѕС‡РёСЃС‚РёС‚Рµ СЃС‚Р°СЂС‹Рµ РєР»СЋС‡Рё
-docker exec redis redis-cli -a YOUR_PASSWORD FLUSHDB  # РћРЎРўРћР РћР–РќРћ!
+cd docker-compose
+docker compose exec redis redis-cli -a "$REDIS_PASSWORD" INFO memory
 ```
 
-## РћРїС‚РёРјРёР·Р°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚Рё
+Если памяти недостаточно, увеличьте `--maxmemory` в `docker-compose/docker-compose.yml` и перезапустите Redis.
 
-### РќР°СЃС‚СЂРѕР№РєР° РґР»СЏ production
+## Источники
 
-1. **РћС‚РєР»СЋС‡РёС‚Рµ РїРµСЂСЃРёСЃС‚РµРЅС‚РЅРѕСЃС‚СЊ** (РµСЃР»Рё РґР°РЅРЅС‹Рµ РЅРµ РєСЂРёС‚РёС‡РЅС‹):
-   ```yaml
-   command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 1gb
-   ```
+- [Redis Documentation](https://redis.io/docs/)
+- [Redis Persistence](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/)
+- [Redis Memory Optimization](https://redis.io/docs/latest/operate/oss_and_stack/management/optimization/memory-optimization/)
 
-2. **РСЃРїРѕР»СЊР·СѓР№С‚Рµ СЂРµРїР»РёРєР°С†РёСЋ** РґР»СЏ РІС‹СЃРѕРєРѕР№ РґРѕСЃС‚СѓРїРЅРѕСЃС‚Рё
+## See Also
 
-3. **РќР°СЃС‚СЂРѕР№С‚Рµ РјРѕРЅРёС‚РѕСЂРёРЅРі** С‡РµСЂРµР· Redis INFO РєРѕРјР°РЅРґС‹
-
-## РЎР»РµРґСѓСЋС‰РёРµ С€Р°РіРё
-
-РџРѕСЃР»Рµ СѓСЃС‚Р°РЅРѕРІРєРё Redis:
-1. РЈСЃС‚Р°РЅРѕРІРёС‚Рµ n8n: [04-n8n.md](04-n8n.md)
-
-## РСЃС‚РѕС‡РЅРёРєРё
-
-- [РћС„РёС†РёР°Р»СЊРЅР°СЏ РґРѕРєСѓРјРµРЅС‚Р°С†РёСЏ Redis](https://redis.io/docs/)
-- [Redis Best Practices](https://redis.io/docs/manual/patterns/)
-
+- [n8n](04-n8n.md) — сервис, использующий Redis для очередей.
+- [Monitoring](09-monitoring.md) — Prometheus/Grafana слой для runtime-наблюдения.
+- [Troubleshooting](11-troubleshooting.md) — общие команды диагностики compose-стека.

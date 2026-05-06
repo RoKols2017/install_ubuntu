@@ -1,3 +1,5 @@
+[← Nginx Operations](07-nginx-operations.md) · [Back to README](../README.md) · [Monitoring →](09-monitoring.md)
+
 # Драйверы и совместимость железа (GPU/NIC/платы)
 
 Это руководство помогает обеспечить одинаковую работу проекта на VPS и на локальном сервере (bare metal).
@@ -97,3 +99,9 @@ ethtool -i <iface>
 - https://packages.ubuntu.com/noble/linux-firmware
 - https://manpages.ubuntu.com/manpages/noble/en/man8/dmidecode.8.html
 - https://manpages.ubuntu.com/manpages/noble/en/man8/modprobe.8.html
+
+## See Also
+
+- [System Requirements](../requirements/system-requirements.md) — базовые требования к серверу.
+- [Scripts Order](15-scripts-order.md) — когда запускать аппаратную проверку.
+- [Monitoring](09-monitoring.md) — наблюдение после установки инфраструктуры.

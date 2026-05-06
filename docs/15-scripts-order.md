@@ -1,3 +1,5 @@
+[← Ready Rules](14-ready-rules.md) · [Back to README](../README.md)
+
 # Последовательность и нумерация скриптов
 
 Цель: единая логика запуска, без ошибок из‑за устаревших имён.
@@ -36,3 +38,9 @@ sudo bash scripts/05-setup-n8n.sh
 sudo bash scripts/12-generate-secrets.sh
 sudo bash scripts/99-ready-checks.sh
 ```
+
+## See Also
+
+- [Quick Start](../QUICKSTART.md) — короткий end-to-end walkthrough.
+- [Ready Rules](14-ready-rules.md) — критерии завершения установки.
+- [Troubleshooting](11-troubleshooting.md) — диагностика при сбоях на этапах.

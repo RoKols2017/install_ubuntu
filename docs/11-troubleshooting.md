@@ -1,3 +1,5 @@
+[← Backups](10-backup-restore.md) · [Back to README](../README.md) · [Quality Checks →](12-quality-checks.md)
+
 # Устранение неполадок
 
 Краткий справочник типовых проблем и решений.
@@ -51,3 +53,9 @@ Studio требует запущенный `supabase_meta`.
 ## Источники
 - https://docs.docker.com/engine/reference/commandline/docker/
 - https://docs.docker.com/compose/reference/
+
+## See Also
+
+- [Quality Checks](12-quality-checks.md) — формальные проверки готовности.
+- [Scripts Order](15-scripts-order.md) — правильная последовательность запуска.
+- [Monitoring](09-monitoring.md) — метрики и логи runtime-сервисов.

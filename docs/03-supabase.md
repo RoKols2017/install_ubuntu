@@ -1,3 +1,5 @@
+[← Architecture Operations](architecture-operations.md) · [Back to README](../README.md) · [n8n →](04-n8n.md)
+
 # Установка Supabase (Self-hosted)
 
 Supabase предоставляет PostgreSQL базу данных с дополнительными функциями: аутентификация, хранилище, real-time подписки.
@@ -190,3 +192,8 @@ docker ps | grep supabase
 - [Официальная документация Supabase Self-hosting](https://supabase.com/docs/guides/self-hosting)
 - [Документация pgvector](https://github.com/pgvector/pgvector)
 
+## See Also
+
+- [pgvector](06-vector-db.md) — настройка vector search поверх PostgreSQL.
+- [Secrets](13-secrets.md) — управление паролями Supabase и `.env`.
+- [Backups](10-backup-restore.md) — резервное копирование PostgreSQL.

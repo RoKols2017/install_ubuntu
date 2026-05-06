@@ -1,3 +1,5 @@
+[← Hardware Drivers](08-hardware-drivers.md) · [Back to README](../README.md) · [Backups →](10-backup-restore.md)
+
 # Мониторинг (Prometheus + Grafana)
 
 Это руководство описывает базовую настройку мониторинга для инфраструктуры.
@@ -49,3 +51,9 @@ scrape_configs:
 ## Источники
 - https://prometheus.io/docs/introduction/overview/
 - https://grafana.com/docs/grafana/latest/
+
+## See Also
+
+- [Quality Checks](12-quality-checks.md) — healthcheck-команды после запуска.
+- [Backups](10-backup-restore.md) — операционная устойчивость данных.
+- [Troubleshooting](11-troubleshooting.md) — диагностика проблем сервисов.

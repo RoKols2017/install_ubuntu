@@ -1,3 +1,5 @@
+[← Redis](05-redis.md) · [Back to README](../README.md) · [Nginx →](07-nginx.md)
+
 # Настройка векторной БД (pgvector)
 
 pgvector уже установлен в Supabase. Настраиваем таблицы и функции для векторного поиска.
@@ -286,3 +288,8 @@ WITH (m = 32, ef_construction = 128);
 - [Официальная документация pgvector](https://github.com/pgvector/pgvector)
 - [Supabase Vector Search документация](https://supabase.com/docs/guides/ai/vector-columns)
 
+## See Also
+
+- [Supabase](03-supabase.md) — PostgreSQL/Supabase foundation для pgvector.
+- [n8n](04-n8n.md) — workflow layer, который может использовать vector search.
+- [Quality Checks](12-quality-checks.md) — проверки доступности PostgreSQL и PgBouncer.

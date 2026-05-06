@@ -1,3 +1,5 @@
+[← Quality Checks](12-quality-checks.md) · [Back to README](../README.md) · [Ready Rules →](14-ready-rules.md)
+
 # Управление секретами
 
 Это руководство описывает базовые практики хранения секретов для production.
@@ -45,3 +47,9 @@ Docker secrets удобны в Swarm и при использовании сер
 ## Источники
 - https://docs.docker.com/engine/swarm/secrets/
 - https://docs.docker.com/compose/environment-variables/
+
+## See Also
+
+- [Quality Checks](12-quality-checks.md) — проверка обязательных переменных.
+- [Ready Rules](14-ready-rules.md) — блокирующие условия готовности.
+- [Backups](10-backup-restore.md) — защита backup credentials.

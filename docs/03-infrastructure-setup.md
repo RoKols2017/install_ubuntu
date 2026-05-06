@@ -1,3 +1,5 @@
+[← Docker Installation](02-docker-installation.md) · [Back to README](../README.md) · [Architecture →](architecture.md)
+
 # Инфраструктура для мультиагентных ассистентов
 
 Это руководство описывает установку и настройку всех компонентов инфраструктуры для мультиагентных ассистентов на базе n8n с Supabase, Redis и pgvector.
@@ -139,3 +141,8 @@ docker exec redis redis-cli -a YOUR_PASSWORD --rdb /data/dump.rdb
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [Redis Documentation](https://redis.io/docs/)
 
+## See Also
+
+- [Architecture](architecture.md) — компоненты и потоки данных.
+- [Supabase](03-supabase.md) — база данных и pgvector foundation.
+- [n8n](04-n8n.md) — automation runtime поверх инфраструктуры.

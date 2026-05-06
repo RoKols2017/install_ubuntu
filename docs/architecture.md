@@ -1,365 +1,89 @@
+[← Infrastructure Setup](03-infrastructure-setup.md) · [Back to README](../README.md) · [Architecture Operations →](architecture-operations.md)
+
 # Архитектура решения
 
-## Обзор
-
-Данная инфраструктура предназначена для развёртывания мультиагентных ассистентов на базе n8n с использованием векторной базы данных для RAG (Retrieval Augmented Generation).
+Инфраструктура предназначена для self-hosted AI automation: n8n workflows, Redis queue mode, Supabase/PostgreSQL, PgBouncer и pgvector для RAG.
 
 ## Компоненты системы
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Ubuntu Server                            │
-│                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │   UFW        │  │   fail2ban   │  │  SSH (22)     │    │
-│  │  Firewall    │  │              │  │              │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘    │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │              Docker Engine                           │  │
-│  │                                                       │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │  │
-│  │  │   Redis      │  │  PgBouncer   │  │  Supabase    │ │  │
-│  │  │  (6379)      │  │  (6432)      │  │  PostgreSQL  │ │  │
-│  │  │              │  │  - Pooling   │  │  (54322)     │ │  │
-│  │  │  - Кэш       │  │              │  │  - pgvector  │ │  │
-│  │  │  - Очереди   │  │              │  │  - Auth      │ │  │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘ │  │
-│  │                                                       │  │
-│  │  ┌─────────────────────────────────────┐             │  │
-│  │  │         n8n Platform                │             │  │
-│  │  │                                      │             │  │
-│  │  │  ┌──────────────┐  ┌──────────────┐│             │  │
-│  │  │  │  n8n Main    │  │ n8n Worker   ││             │  │
-│  │  │  │  (5678)      │  │              ││             │  │
-│  │  │  │  - Web UI    │  │  - Tasks     ││             │  │
-│  │  │  │  - API       │  │  - Jobs      ││             │  │
-│  │  │  └──────────────┘  └──────────────┘│             │  │
-│  │  └─────────────────────────────────────┘             │  │
-│  └─────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+```text
+Ubuntu Server
+  ├─ UFW + fail2ban + SSH hardening
+  └─ Docker Engine
+      ├─ Redis              queue/cache, localhost:6379
+      ├─ Supabase DB        PostgreSQL + pgvector, localhost:54322
+      ├─ PgBouncer          connection pooling, localhost:6432
+      ├─ Supabase Studio    optional UI, localhost:54323
+      ├─ n8n Main           web UI/API, localhost:5678
+      └─ n8n Worker         queue worker
 ```
 
-## Поток данных
+## Runtime Roles
 
-### 1. Запрос пользователя
+| Component | Role | Notes |
+|-----------|------|-------|
+| Ubuntu Server | OS and security baseline | UFW, fail2ban, SSH, updates |
+| Docker Engine | Service isolation | Compose-managed stack |
+| Redis | Queue and cache | AOF persistence, password auth |
+| Supabase/PostgreSQL | Primary database | Stores workflow data and vector content |
+| pgvector | Vector search | RAG similarity search |
+| PgBouncer | Connection pool | n8n connects through pooler |
+| n8n Main | Workflow UI/API | Receives webhooks and manages workflows |
+| n8n Worker | Job execution | Processes Redis queue tasks |
+| Nginx | Optional reverse proxy | HTTPS/public access path |
 
-```
-Пользователь → n8n Webhook → n8n Workflow
-```
+## Network Model
 
-### 2. Обработка запроса (RAG)
-
-```
-n8n Workflow
-  ├─→ OpenAI Embedding API (создание embedding)
-  ├─→ PgBouncer → PostgreSQL + pgvector (поиск похожих документов)
-  ├─→ Формирование контекста
-  └─→ OpenAI Chat API (генерация ответа)
-```
-
-### 3. Мультиагентная обработка
-
-```
-n8n Workflow
-  ├─→ Агент поиска (Redis очередь)
-  │     └─→ PgBouncer → PostgreSQL (векторный поиск)
-  ├─→ Агент анализа (Redis очередь)
-  │     └─→ OpenAI API
-  └─→ Агент генерации (Redis очередь)
-        └─→ Формирование финального ответа
-```
-
-## Компоненты детально
-
-### 1. Ubuntu Server (Базовый слой)
-
-**Роль:** Операционная система и безопасность
-
-**Компоненты:**
-- UFW Firewall - управление сетевым трафиком
-- fail2ban - защита от брутфорс атак
-- SSH - безопасный удалённый доступ
-- Автоматические обновления безопасности
-
-**Порты:**
-- 22 (SSH) - рекомендуется изменить
-
-### 2. Docker Engine
-
-**Роль:** Контейнеризация и изоляция сервисов
-
-**Преимущества:**
-- Изоляция сервисов
-- Простое масштабирование
-- Управление зависимостями
-- Версионирование
-
-### 3. Redis
-
-**Роль:** Кэш и очередь задач
-
-**Использование:**
-- Кэширование результатов запросов
-- Очередь задач для n8n workers
-- Сессии пользователей
-- Pub/Sub для real-time коммуникации
-
-**Конфигурация:**
-- Порт: 6379
-- Персистентность: AOF (Append Only File)
-- Лимит памяти: 512 MB (настраивается)
-
-### 4. Supabase (PostgreSQL + pgvector)
-
-**Роль:** База данных с векторным поиском
-
-**Компоненты:**
-- PostgreSQL 15 - основная БД
-- pgvector - расширение для векторного поиска
-- Supabase Auth - аутентификация (опционально)
-- Supabase Studio - веб-интерфейс (опционально)
-
-**Таблицы:**
-- `documents` - документы с эмбеддингами
-- `chat_sessions` - сессии чата
-
-**Функции:**
-- `match_documents()` - векторный поиск
-
-**Порты:**
-- 54322 (PostgreSQL)
-- 54323 (Studio, опционально)
-
-### 5. n8n Platform
-
-**Роль:** Платформа автоматизации и оркестрации
-
-**Компоненты:**
-
-#### n8n Main
-- Web UI (порт 5678)
-- REST API
-- Управление workflow
-- Хранение конфигураций в PostgreSQL
-
-#### n8n Worker
-- Обработка задач из очереди Redis
-- Выполнение workflow
-- Масштабирование нагрузки
-
-**Workflow примеры:**
-1. **RAG Pipeline:**
-   - Webhook → Embedding → Vector Search → Chat → Response
-
-2. **Multi-Agent:**
-   - Webhook → Agent Router → Multiple Agents → Aggregator → Response
-
-**Интеграции:**
-- OpenAI API (ChatGPT, Embeddings)
-    - PgBouncer → PostgreSQL (векторный поиск)
-- Redis (очереди)
-- Webhooks (внешние API)
-
-## Сетевая архитектура
-
-```
+```text
 Internet
-  │
-  ├─→ UFW Firewall
-  │     │
-  │     ├─→ SSH (22) - управление
-  │     ├─→ Nginx (80/443) - reverse proxy
-  │     └─→ (опционально) прямой доступ к n8n/Studio через override
-  │
-  └─→ Docker Network (infrastructure-network)
-        │
-       ├─→ Redis (6379) - внутренний
-       ├─→ PgBouncer (6432) - внутренний
-       ├─→ PostgreSQL (54322) - внутренний
-       ├─→ n8n Main
-       └─→ n8n Worker
+  ├─ SSH 22/tcp for administration
+  ├─ Nginx 80/443 for intentional public access
+  └─ Docker services bound to 127.0.0.1 by default
+
+Docker network: infrastructure-network
+  ├─ redis:6379
+  ├─ supabase_db:5432
+  ├─ pgbouncer:6432
+  ├─ supabase_meta:8080
+  ├─ supabase_studio:3000
+  ├─ n8n:5678
+  └─ n8n-worker
 ```
 
-## Потоки данных
+## RAG Flow
 
-### Запрос → Ответ (RAG)
-
-```
-1. Пользователь отправляет запрос через Webhook
-   ↓
-2. n8n получает запрос и создаёт embedding через OpenAI
-   ↓
-3. n8n выполняет векторный поиск в PostgreSQL
-   ↓
-4. n8n формирует контекст из найденных документов
-   ↓
-5. n8n отправляет запрос + контекст в OpenAI Chat API
-   ↓
-6. n8n возвращает ответ пользователю
+```text
+User/Webhook
+  -> n8n workflow
+  -> embedding API
+  -> PgBouncer
+  -> PostgreSQL + pgvector similarity search
+  -> context assembly
+  -> LLM response
+  -> user/result endpoint
 ```
 
-### Мультиагентная обработка
+## Multi-Agent Flow
 
-```
-1. Пользователь отправляет запрос
-   ↓
-2. n8n Main получает запрос и создаёт задачи для агентов
-   ↓
-3. Задачи добавляются в Redis очередь
-   ↓
-4. n8n Workers обрабатывают задачи параллельно:
-   ├─→ Агент поиска: ищет информацию в векторной БД
-   ├─→ Агент анализа: анализирует данные через OpenAI
-   └─→ Агент генерации: создаёт финальный ответ
-   ↓
-5. Результаты агрегируются
-   ↓
-6. Финальный ответ возвращается пользователю
+```text
+n8n Main
+  -> route task
+  -> Redis queue
+  -> n8n Worker(s)
+  -> PostgreSQL/pgvector and external APIs
+  -> aggregate result
 ```
 
-## Масштабирование
+## Security Boundaries
 
-### Горизонтальное масштабирование
+- Internal databases and Redis bind to `127.0.0.1` on the host.
+- Public access should go through Nginx with HTTPS.
+- Secrets live in `docker-compose/.env` and are generated by `scripts/12-generate-secrets.sh`.
+- Ready checks validate required services and secrets before treating the stack as usable.
 
-1. **n8n Workers:**
-   - Добавление дополнительных worker контейнеров
-   - Настройка через `N8N_WORKERS_COUNT`
+## Detailed Operations
 
-2. **Redis:**
-   - Настройка репликации (master-slave)
-   - Использование Redis Cluster для больших нагрузок
-
-3. **PostgreSQL:**
-   - Настройка репликации чтения
-   - Использование connection pooling (PgBouncer)
-
-### Вертикальное масштабирование
-
-- Увеличение RAM сервера
-- Увеличение CPU ядер
-- Использование SSD для базы данных
-
-## Безопасность
-
-### Уровни защиты
-
-1. **Сетевой уровень:**
-   - UFW Firewall
-   - Закрытие ненужных портов
-   - Ограничение доступа по IP
-
-2. **Уровень приложения:**
-   - Аутентификация n8n (Basic Auth)
-   - Пароли для Redis и PostgreSQL
-   - HTTPS (через Nginx reverse proxy)
-
-3. **Уровень данных:**
-   - Шифрование соединений
-   - Резервное копирование
-   - Регулярные обновления
-
-## Мониторинг
-
-### Рекомендуемые метрики
-
-1. **Системные:**
-   - CPU, RAM, Disk usage
-   - Network traffic
-
-2. **Docker:**
-   - Статус контейнеров
-   - Использование ресурсов
-
-3. **Приложения:**
-   - n8n: количество выполненных workflow
-   - Redis: количество операций, использование памяти
-   - PostgreSQL: количество запросов, размер БД
-
-### Инструменты мониторинга
-
-- Prometheus + Grafana (рекомендуется)
-- Docker stats
-- Логи приложений
-
-## Резервное копирование
-
-### Что бэкапить
-
-1. **PostgreSQL:**
-   ```bash
-   pg_dump -U postgres postgres > backup.sql
-   ```
-
-2. **Redis:**
-   ```bash
-   redis-cli --rdb /backup/dump.rdb
-   ```
-
-3. **n8n данные:**
-   - Workflow конфигурации (в PostgreSQL)
-   - Локальные файлы (volumes)
-
-### Стратегия бэкапа
-
-- Ежедневные бэкапы БД
-- Еженедельные полные бэкапы
-- Хранение бэкапов на отдельном сервере
-
-## Производительность
-
-### Оптимизации
-
-1. **PostgreSQL:**
-   - Настройка индексов (HNSW для векторов)
-   - Connection pooling
-   - Query optimization
-
-2. **Redis:**
-   - Настройка памяти и политик eviction
-   - Использование pipeline для batch операций
-
-3. **n8n:**
-   - Оптимизация workflow
-   - Использование кэша Redis
-   - Параллельная обработка через workers
-
-## Развёртывание
-
-### Последовательность установки
-
-1. Безопасная настройка Ubuntu (Этап 1)
-2. Установка Docker (Этап 2)
-3. Установка Redis
-4. Установка Supabase
-5. Настройка pgvector
-6. Установка n8n
-7. Настройка интеграций
-
-### Автоматизация
-
-Все шаги автоматизированы через скрипты в директории `scripts/`.
-
-## Дальнейшее развитие
-
-### Возможные улучшения
-
-1. **Nginx Reverse Proxy:**
-   - SSL/TLS сертификаты (Let's Encrypt)
-   - Load balancing
-   - Rate limiting
-
-2. **Мониторинг:**
-   - Prometheus + Grafana
-   - Alerting
-
-3. **CI/CD:**
-   - Автоматическое развёртывание
-   - Тестирование
-
-4. **Кластеризация:**
-   - Docker Swarm или Kubernetes
-   - Высокая доступность
+Scaling notes, monitoring strategy, backup scope, performance notes and future evolution are documented in [Architecture Operations](architecture-operations.md).
 
 ## Источники
 
@@ -367,3 +91,8 @@ Internet
 - [Supabase Architecture](https://supabase.com/docs/guides/self-hosting)
 - [pgvector Performance](https://github.com/pgvector/pgvector#performance)
 
+## See Also
+
+- [Architecture Operations](architecture-operations.md) — scaling, backup and performance details.
+- [Infrastructure Setup](03-infrastructure-setup.md) — практический порядок развертывания.
+- [Monitoring](09-monitoring.md) — observability для runtime-компонентов.
