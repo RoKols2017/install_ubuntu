@@ -3,7 +3,7 @@
 # Скрипт установки Docker и Docker Compose на Ubuntu
 # Требует прав root или sudo
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Цвета для вывода
 RED='\033[0;31m'
@@ -24,6 +24,8 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+trap 'log_error "Ошибка на строке $LINENO: $BASH_COMMAND"' ERR
+
 # Проверка прав root
 if [ "$EUID" -ne 0 ]; then 
     log_error "Пожалуйста, запустите скрипт с правами root или через sudo"
@@ -37,8 +39,9 @@ log_info "Шаг 0: Очистка старых источников Docker..."
 # Удаляем все файлы источников Docker в sources.list.d
 rm -f /etc/apt/sources.list.d/docker*.list
 rm -f /etc/apt/sources.list.d/docker*.list.save
+rm -f /etc/apt/sources.list.d/docker.sources
 # Находим и очищаем все файлы, содержащие упоминания Docker
-find /etc/apt/sources.list.d/ -type f -name "*.list" -exec grep -l "download\.docker\.com" {} \; 2>/dev/null | xargs rm -f 2>/dev/null || true
+find /etc/apt/sources.list.d/ -type f \( -name "*.list" -o -name "*.sources" \) -exec grep -l "download\.docker\.com" {} \; 2>/dev/null | xargs -r rm -f 2>/dev/null || true
 # Удаляем записи Docker из основного файла sources.list (если есть)
 sed -i '/download\.docker\.com/d' /etc/apt/sources.list 2>/dev/null || true
 # Удаляем старые ключевые файлы
@@ -46,10 +49,6 @@ rm -f /etc/apt/keyrings/docker.gpg
 rm -f /etc/apt/keyrings/docker.asc
 rm -f /usr/share/keyrings/docker-archive-keyring.gpg
 rm -f /usr/share/keyrings/docker.gpg
-# Удаляем все возможные ключевые файлы Docker
-find /etc/apt/keyrings /usr/share/keyrings -name "*docker*" -type f 2>/dev/null | xargs rm -f 2>/dev/null || true
-# Удаляем старые ключи из apt-key (устаревший метод)
-apt-key list 2>/dev/null | grep -B1 "Docker" | grep "^pub" | awk '{print $2}' | cut -d'/' -f2 | xargs -I {} apt-key del {} 2>/dev/null || true
 # Очищаем кэш apt
 apt clean 2>/dev/null || true
 rm -rf /var/lib/apt/lists/*download.docker.com* 2>/dev/null || true
@@ -86,8 +85,8 @@ apt install -y \
 # Шаг 3: Добавление официального GPG ключа Docker
 log_info "Шаг 3: Добавление официального GPG ключа Docker..."
 install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
 log_info "GPG ключ Docker добавлен"
 
 # Шаг 4: Добавление репозитория Docker
@@ -95,9 +94,14 @@ log_info "Шаг 4: Добавление репозитория Docker..."
 ARCH=$(dpkg --print-architecture)
 CODENAME=$(lsb_release -cs)
 
-echo \
-  "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  ${CODENAME} stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+cat > /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: ${CODENAME}
+Components: stable
+Architectures: ${ARCH}
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 log_info "Репозиторий Docker добавлен"
 
 # Шаг 5: Установка Docker Engine и Docker Compose
@@ -195,11 +199,11 @@ docker compose version
 
 echo ""
 log_info "Статус Docker сервиса:"
-systemctl status docker --no-pager | head -5
+systemctl status docker --no-pager | sed -n '1,5p'
 
 echo ""
 log_info "Информация о Docker:"
-docker info | head -10
+docker info | sed -n '1,10p'
 
 echo ""
 log_warn "ВАЖНО:"
@@ -210,4 +214,3 @@ if [ "$CURRENT_USER" != "root" ]; then
 fi
 
 log_info "Установка Docker завершена успешно!"
-

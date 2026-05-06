@@ -3,7 +3,7 @@
 # Скрипт установки и базовой настройки Nginx
 # Требует прав root или sudo
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Цвета для вывода
 RED='\033[0;31m'
@@ -24,6 +24,25 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+trap 'log_error "Ошибка на строке $LINENO: $BASH_COMMAND"' ERR
+
+confirm_yes_no() {
+    local prompt="$1"
+    local default="${2:-n}"
+    local answer
+
+    if [ ! -t 0 ]; then
+        log_warn "Неинтерактивный режим: использую ответ по умолчанию '$default' для '$prompt'"
+        [[ "$default" =~ ^[Yy]$ ]]
+        return
+    fi
+
+    read -rp "$prompt" -n 1 answer
+    echo
+    answer="${answer:-$default}"
+    [[ "$answer" =~ ^[Yy]$ ]]
+}
+
 # Проверка прав root
 if [ "$EUID" -ne 0 ]; then 
     log_error "Пожалуйста, запустите скрипт с правами root или через sudo"
@@ -41,9 +60,7 @@ log_info "Шаг 2: Установка Nginx..."
 if command -v nginx &> /dev/null; then
     log_info "Nginx уже установлен. Версия:"
     nginx -v
-    read -p "Продолжить настройку? (y/n): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    if ! confirm_yes_no "Продолжить настройку? (y/n): " "n"; then
         log_info "Установка отменена"
         exit 0
     fi
@@ -121,7 +138,7 @@ mkdir -p /etc/nginx/sites-enabled
 log_info "=== Установка Nginx завершена ==="
 echo ""
 log_info "Статус Nginx:"
-systemctl status nginx --no-pager | head -5
+systemctl status nginx --no-pager | sed -n '1,5p'
 
 echo ""
 log_info "Проверка конфигурации:"
@@ -149,4 +166,3 @@ log_warn "   sudo apt install -y certbot python3-certbot-nginx"
 log_warn "   sudo certbot --nginx -d your-domain.com"
 log_warn ""
 log_info "Nginx доступен по адресу: http://$(hostname -I | awk '{print $1}')"
-

@@ -3,7 +3,7 @@
 # Скрипт резервного копирования PostgreSQL (Supabase)
 # Требует установленный postgresql-client
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Цвета для вывода
 RED='\033[0;31m'
@@ -23,6 +23,8 @@ log_warn() {
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+trap 'log_error "Ошибка на строке $LINENO: $BASH_COMMAND"' ERR
 
 # Проверка прав root
 if [ "$EUID" -ne 0 ]; then
@@ -50,6 +52,7 @@ DB_USER="${DB_USER:-postgres}"
 
 # Путь для бэкапов
 BACKUP_DIR="${BACKUP_DIR:-/opt/backups}"
+RETENTION_DAYS="${RETENTION_DAYS:-14}"
 
 # Получаем пароль из .env или запрашиваем вручную
 DB_PASSWORD=""
@@ -70,6 +73,7 @@ fi
 
 # Создаём директорию для бэкапов
 mkdir -p "$BACKUP_DIR"
+chmod 700 "$BACKUP_DIR"
 
 # Используем временный PGPASSFILE, чтобы не светить пароль в окружении
 PGPASS_FILE=$(mktemp)
@@ -91,3 +95,8 @@ log_info "  Файл: $BACKUP_FILE"
 pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" | gzip > "$BACKUP_FILE"
 
 log_info "Бэкап завершён успешно"
+
+if [[ "$RETENTION_DAYS" =~ ^[0-9]+$ ]] && [ "$RETENTION_DAYS" -gt 0 ]; then
+    log_info "Удаляем бэкапы старше ${RETENTION_DAYS} дней"
+    find "$BACKUP_DIR" -maxdepth 1 -type f -name 'postgres_*.sql.gz' -mtime "+$RETENTION_DAYS" -delete
+fi

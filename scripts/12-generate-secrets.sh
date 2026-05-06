@@ -2,13 +2,13 @@
 
 # Скрипт генерации секретов для .env и Supabase config.toml
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Цвета для вывода
-RED='\\033[0;31m'
-GREEN='\\033[0;32m'
-YELLOW='\\033[1;33m'
-NC='\\033[0m' # No Color
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
 # Функции для логирования
 log_info() {
@@ -22,6 +22,8 @@ log_warn() {
 log_error() {
   echo -e "${RED}[ERROR]${NC} $1"
 }
+
+trap 'log_error "Ошибка на строке $LINENO: $BASH_COMMAND"' ERR
 
 # Проверка прав root
 if [ "$EUID" -ne 0 ]; then
@@ -41,7 +43,9 @@ generate_password() {
   if command -v openssl &> /dev/null; then
     openssl rand -base64 24 | tr -d "=+/" | cut -c1-32
   else
-    tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32
+    local password
+    password="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)" || true
+    printf '%s\n' "$password"
   fi
 }
 
@@ -64,8 +68,10 @@ get_env_value() {
 set_env_value() {
   local key="$1"
   local value="$2"
+  local escaped_value
+  escaped_value="$(printf '%s' "$value" | sed 's/[&/\\]/\\&/g')"
   if grep -q "^${key}=" "$ENV_FILE"; then
-    sed -i "s/^${key}=.*/${key}=${value}/" "$ENV_FILE"
+    sed -i "s/^${key}=.*/${key}=${escaped_value}/" "$ENV_FILE"
   else
     echo "${key}=${value}" >> "$ENV_FILE"
   fi
@@ -81,7 +87,11 @@ if [ ! -f "$ENV_FILE" ]; then
   cp "$ENV_EXAMPLE" "$ENV_FILE"
 fi
 
-read -rp "Пересоздать все секреты (rotation)? (y/N): " ROTATE
+if [ ! -t 0 ]; then
+  ROTATE="${ROTATE_SECRETS:-N}"
+else
+  read -rp "Пересоздать все секреты (rotation)? (y/N): " ROTATE
+fi
 ROTATE="${ROTATE:-N}"
 
 SECRETS=(
@@ -117,7 +127,8 @@ if [ -f "$SUPABASE_CONFIG" ]; then
     log_warn "SUPABASE_DB_PASSWORD пустой — config.toml не обновлён"
   else
     if grep -q "^password = " "$SUPABASE_CONFIG"; then
-      sed -i "s/^password = .*/password = \"${SUPABASE_DB_PASSWORD}\"/" "$SUPABASE_CONFIG"
+      ESCAPED_SUPABASE_DB_PASSWORD="$(printf '%s' "$SUPABASE_DB_PASSWORD" | sed 's/[&/\\]/\\&/g')"
+      sed -i "s/^password = .*/password = \"${ESCAPED_SUPABASE_DB_PASSWORD}\"/" "$SUPABASE_CONFIG"
       log_info "Обновлён пароль в config.toml"
     else
       log_warn "Не найдена строка password в config.toml"

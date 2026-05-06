@@ -17,6 +17,14 @@ sudo bash scripts/99-ready-checks.sh
 
 ## 2. Проверка скриптов (shellcheck)
 ```bash
+bash scripts/98-verify-scripts.sh
+```
+
+Скрипт запускает `bash -n scripts/*.sh` и, если установлен ShellCheck, `shellcheck scripts/*.sh`.
+
+Установить ShellCheck вручную:
+
+```bash
 sudo apt install -y shellcheck
 shellcheck scripts/*.sh
 ```

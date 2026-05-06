@@ -2,7 +2,7 @@
 
 # Скрипт проверки готовности после установки
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Цвета для вывода
 RED='\033[0;31m'
@@ -22,6 +22,8 @@ log_warn() {
 log_error() {
   echo -e "${RED}[ERROR]${NC} $1"
 }
+
+trap 'log_error "Ошибка на строке $LINENO: $BASH_COMMAND"' ERR
 
 # Проверка прав root
 if [ "$EUID" -ne 0 ]; then
@@ -110,14 +112,14 @@ fi
 
 # Проверка PostgreSQL напрямую
 PGPASSWORD="$(get_env_value SUPABASE_DB_PASSWORD)"
-docker compose exec -T supabase_db bash -lc "PGPASSWORD='${PGPASSWORD}' psql -U postgres -d postgres -c 'SELECT 1;'" > /dev/null
+docker compose exec -T -e PGPASSWORD="$PGPASSWORD" supabase_db psql -U postgres -d postgres -c 'SELECT 1;' > /dev/null
 
 # Проверка PgBouncer
-docker compose exec -T supabase_db bash -lc "PGPASSWORD='${PGPASSWORD}' psql -h pgbouncer -p 6432 -U postgres -d postgres -c 'SELECT 1;'" > /dev/null
+docker compose exec -T -e PGPASSWORD="$PGPASSWORD" supabase_db psql -h pgbouncer -p 6432 -U postgres -d postgres -c 'SELECT 1;' > /dev/null
 
 # Проверка Redis
 REDIS_PASSWORD="$(get_env_value REDIS_PASSWORD)"
-docker compose exec -T redis redis-cli -a "$REDIS_PASSWORD" ping | grep -q PONG
+docker compose exec -T -e REDISCLI_AUTH="$REDIS_PASSWORD" redis redis-cli ping | grep -q PONG
 
 # Проверка мониторинга (опционально)
 if docker compose ps --services --filter "status=running" | grep -q "^prometheus$"; then

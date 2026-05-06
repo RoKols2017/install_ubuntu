@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Объединённая конфигурация всех сервисов инфраструктуры
 # Использование: docker-compose up -d
 
@@ -231,4 +229,3 @@ networks:
   infrastructure-network:
     driver: bridge
     name: infrastructure-network
-
