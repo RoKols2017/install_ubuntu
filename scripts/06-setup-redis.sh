@@ -95,9 +95,11 @@ if ! grep -q "^REDIS_PASSWORD=" .env 2>/dev/null; then
     if grep -q "^# Redis" .env; then
         sed -i "/^# Redis/a REDIS_PASSWORD=${REDIS_PASSWORD}" .env
     else
-        echo "" >> .env
-        echo "# Redis" >> .env
-        echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> .env
+        {
+            echo ""
+            echo "# Redis"
+            echo "REDIS_PASSWORD=${REDIS_PASSWORD}"
+        } >> .env
     fi
     
     log_info "Переменная REDIS_PASSWORD добавлена в .env"

@@ -9,6 +9,15 @@
 - Выполняйте hardening на чистом сервере или после резервной копии.
 - Сначала проверьте SSH-доступ по ключу, затем меняйте SSH-настройки.
 - Если работаете по SSH, держите вторую активную сессию до проверки нового доступа.
+- Генерируйте ключи на клиентской машине; на сервер и в GitHub добавляйте только `.pub`.
+
+## Pre-hardening checklist
+
+- SSH-ключ создан или выбран на клиентской машине.
+- Публичный ключ добавлен в `~/.ssh/authorized_keys` нужного пользователя на сервере.
+- Вход по ключу проверен во второй SSH-сессии.
+- Root/password hardening включается только после подтверждения ключевого доступа.
+- Подробный guide по GitHub, VPS/root, deploy и backup ключам: [SSH Keys](ssh-keys.md).
 
 ## Быстрый путь
 
@@ -95,7 +104,7 @@ systemctl status unattended-upgrades --no-pager
 
 ## Advanced details
 
-Расширенные настройки SSH-порта, `sysctl`, logwatch, ручное добавление SSH-ключей и дополнительные рекомендации вынесены в [Security Hardening Details](01-server-security-hardening.md).
+Расширенные настройки SSH-порта, `sysctl`, logwatch и дополнительные рекомендации вынесены в [Security Hardening Details](01-server-security-hardening.md). Подробные SSH-key сценарии описаны в [SSH Keys](ssh-keys.md).
 
 ## Источники
 
@@ -106,5 +115,6 @@ systemctl status unattended-upgrades --no-pager
 ## See Also
 
 - [Security Hardening Details](01-server-security-hardening.md) — расширенные настройки безопасности.
+- [SSH Keys](ssh-keys.md) — генерация и настройка ключей для GitHub, VPS/root, deploy и backup доступа.
 - [Docker Installation](02-docker-installation.md) — следующий этап после hardening.
 - [Quality Checks](12-quality-checks.md) — проверка готовности после установки.

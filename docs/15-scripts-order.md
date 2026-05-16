@@ -7,7 +7,7 @@
 ## 1. Актуальный порядок выполнения
 
 1. `scripts/00-preflight-check.sh` — preflight проверки (VPS)
-2. `scripts/01-setup-ssh-keys.sh` — SSH ключи (клиентская машина)
+2. `scripts/01-setup-ssh-keys.sh` — SSH-ключи для GitHub/VPS/deploy/backup сценариев (клиентская машина)
 3. `scripts/02-secure-server.sh` — базовая безопасность сервера
 4. `scripts/03-install-docker.sh` — установка Docker/Compose
 5. `scripts/04-setup-supabase.sh` — Supabase (PostgreSQL)

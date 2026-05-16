@@ -49,7 +49,7 @@ Fresh Ubuntu server
 # 1. Check the server before changing it
 sudo bash scripts/00-preflight-check.sh
 
-# 2. Prepare SSH keys from the client machine
+# 2. Prepare SSH keys on the client machine
 bash scripts/01-setup-ssh-keys.sh
 
 # 3. Harden the server
@@ -67,7 +67,7 @@ docker compose --env-file .env up -d
 sudo bash ../scripts/99-ready-checks.sh
 ```
 
-For the full installation path, use [QUICKSTART.md](QUICKSTART.md).
+For the full installation path, use [QUICKSTART.md](QUICKSTART.md). For GitHub, VPS/root, deploy and backup key scenarios, see [SSH Keys](docs/ssh-keys.md).
 
 ## Real Use Cases
 
@@ -95,6 +95,7 @@ For the full installation path, use [QUICKSTART.md](QUICKSTART.md).
 | [Quick Start](QUICKSTART.md) | End-to-end installation path |
 | [System Requirements](requirements/system-requirements.md) | CPU, RAM, disk and OS requirements |
 | [Server Security](docs/01-server-security.md) | SSH, UFW, fail2ban and hardening |
+| [SSH Keys](docs/ssh-keys.md) | Key naming, GitHub/VPS/deploy scenarios and permissions |
 | [Security Hardening Details](docs/01-server-security-hardening.md) | Advanced SSH, sysctl and audit notes |
 | [Docker Installation](docs/02-docker-installation.md) | Docker Engine and Compose setup |
 | [Infrastructure Setup](docs/03-infrastructure-setup.md) | Stack overview and deployment order |

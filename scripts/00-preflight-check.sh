@@ -42,6 +42,7 @@ if ! grep -qi "ubuntu" /etc/os-release; then
   exit 1
 fi
 
+# shellcheck source=/dev/null
 OS_VERSION="$(. /etc/os-release && echo "${VERSION_ID}")"
 if [ "$OS_VERSION" != "24.04" ] && [ "$OS_VERSION" != "22.04" ]; then
   log_warn "Рекомендуется Ubuntu 24.04 LTS (обнаружено: $OS_VERSION)"

@@ -53,22 +53,22 @@ if [ -f "$COMPOSE_DIR/.env" ]; then
         log_info "Параметры подключения загружены из .env файла"
     else
         log_warn "Переменная SUPABASE_DB_PASSWORD не найдена в .env, запрашиваем вручную..."
-        read -sp "Пароль PostgreSQL: " DB_PASSWORD
+        read -rsp "Пароль PostgreSQL: " DB_PASSWORD
         echo ""
     fi
 else
     log_warn "Файл .env не найден в $COMPOSE_DIR, запрашиваем параметры вручную..."
     log_warn "Рекомендуется сначала запустить скрипт установки Supabase (04-setup-supabase.sh)"
     echo ""
-    read -p "Хост PostgreSQL [localhost]: " DB_HOST_INPUT
+    read -rp "Хост PostgreSQL [localhost]: " DB_HOST_INPUT
     DB_HOST=${DB_HOST_INPUT:-localhost}
-    read -p "Порт PostgreSQL [54322]: " DB_PORT_INPUT
+    read -rp "Порт PostgreSQL [54322]: " DB_PORT_INPUT
     DB_PORT=${DB_PORT_INPUT:-54322}
-    read -p "Имя базы данных [postgres]: " DB_NAME_INPUT
+    read -rp "Имя базы данных [postgres]: " DB_NAME_INPUT
     DB_NAME=${DB_NAME_INPUT:-postgres}
-    read -p "Пользователь [postgres]: " DB_USER_INPUT
+    read -rp "Пользователь [postgres]: " DB_USER_INPUT
     DB_USER=${DB_USER_INPUT:-postgres}
-    read -sp "Пароль: " DB_PASSWORD
+    read -rsp "Пароль: " DB_PASSWORD
     echo ""
 fi
 

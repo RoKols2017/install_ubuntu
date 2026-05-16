@@ -19,27 +19,31 @@ sudo systemctl restart sshd
 
 ## SSH-ключи
 
-На клиентской машине:
+Основной guide по именованию, passphrase, GitHub, VPS/root, deploy и backup ключам: [SSH Keys](ssh-keys.md).
+
+Минимальный сценарий на клиентской машине:
 
 ```bash
-ssh-keygen -t ed25519 -C "your_email@example.com"
-ssh-copy-id -p 22 user@server_ip
+ssh-keygen -t ed25519 -f ~/.ssh/vps-fi-01_root_ubuntu_pc -C "email@example.com | vps-root | vps-fi-01/root | ubuntu-pc | 2026-05-16"
+ssh-copy-id -i ~/.ssh/vps-fi-01_root_ubuntu_pc.pub -p 22 root@server_ip
 ```
 
 Если порт изменён:
 
 ```bash
-ssh-copy-id -p 2222 user@server_ip
+ssh-copy-id -i ~/.ssh/vps-fi-01_root_ubuntu_pc.pub -p 2222 root@server_ip
 ```
 
-На сервере при ручной настройке:
+На сервере при ручной настройке добавляйте только публичный ключ:
 
 ```bash
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
-echo "YOUR_PUBLIC_KEY" >> ~/.ssh/authorized_keys
+printf '%s\n' 'YOUR_PUBLIC_KEY' >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
+
+Не вставляйте приватный ключ в `authorized_keys`, GitHub, чаты, тикеты или репозитории.
 
 ## fail2ban jail.local
 
@@ -124,5 +128,6 @@ sudo chmod +x /etc/cron.daily/00logwatch
 ## See Also
 
 - [Server Security](01-server-security.md) — базовый hardening flow.
+- [SSH Keys](ssh-keys.md) — подробные сценарии SSH-ключей.
 - [Nginx](07-nginx.md) — HTTPS и reverse proxy.
 - [Monitoring](09-monitoring.md) — наблюдение за runtime-сервисами.

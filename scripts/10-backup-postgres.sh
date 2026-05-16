@@ -62,7 +62,7 @@ fi
 
 if [ -z "$DB_PASSWORD" ]; then
     log_warn "SUPABASE_DB_PASSWORD не найден в .env, введите пароль вручную"
-    read -sp "Пароль PostgreSQL: " DB_PASSWORD
+    read -rsp "Пароль PostgreSQL: " DB_PASSWORD
     echo ""
 fi
 
